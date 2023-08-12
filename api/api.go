@@ -6,6 +6,7 @@ import (
 
 var (
     ErrLoginWrong = errors.New("login parameters error")
+    ErrNoTable = errors.New("no table matches reservation")
 )
 
 type LoginParam struct {
@@ -42,7 +43,29 @@ type SearchResult struct {
 }
 
 
+type Time struct {
+    Hour            string
+    Minute          string
+ }
+
+type ReserveParam struct {
+    VenueID          int64
+    Day              string
+    Month            string
+    Year             string
+    ReservationTimes []Time
+    PartySize        int
+    Token            string
+    PaymentMethodID  int64
+}
+
+
+type ReserveResponse struct {
+    ReservationTime Time
+}
+
 type API interface {
-    Login(params LoginParam) (LoginResponse, error)
-    Search(params SearchParam) (SearchResponse, error)
+    Login(params LoginParam) (*LoginResponse, error)
+    Search(params SearchParam) (*SearchResponse, error)
+    Reserve(params ReserveParam) (*ReserveResponse, error)
 }
