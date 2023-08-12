@@ -9,6 +9,7 @@ import (
     "bytes"
     "strconv"
     "strings"
+    "fmt"
 )
 
 type API struct {
@@ -263,15 +264,14 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
                    continue 
                 }
 
-                _, err = io.ReadAll(responseBook.Body)
+                responseBookBody, err := io.ReadAll(responseBook.Body)
                 if err != nil {
                     continue
                 }
+                if string(responseBook.Status) != "201 Created" {
+                    continue
+                }
                 return nil, nil
-
-
-
-
 
             }
         }
