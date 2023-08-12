@@ -14,15 +14,35 @@ type LoginParam struct {
 }
 
 type LoginResponse struct {
-    ID              int64  `json: id`
-    FirstName       string `json: first_name`
-    LastName        string `json: last_name`
-    Mobile          string `json: mobile_number`
-    Email           string `json: em_address`
-    PaymentMethodID int64  `json: payment_method_id`
-    Token           string `json: token`
+    ID              int64  
+    FirstName       string 
+    LastName        string 
+    Mobile          string 
+    Email           string 
+    PaymentMethodID int64  
+    Token           string 
 }
+
+type SearchParam struct {
+    Token           string    
+    Name            string
+    Limit           int
+}
+
+type SearchResponse struct {
+    Results []SearchResult
+}
+
+type SearchResult struct {
+    VenueID         int64 
+    Name            string
+    Region          string
+    Locality        string
+    Neighborhood    string
+}
+
 
 type API interface {
     Login(params LoginParam) (LoginResponse, error)
+    Search(params SearchParam) (SearchResponse, error)
 }
