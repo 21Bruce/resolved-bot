@@ -5,8 +5,8 @@ import (
 )
 
 var (
-    ErrLoginWrong = errors.New("login parameters error")
-    ErrNoTable = errors.New("no table matches reservation")
+    ErrLoginWrong = errors.New("invalid login credentials")
+    ErrNoTable = errors.New("no tables available matching reservation requests")
 )
 
 type LoginParam struct {
@@ -21,11 +21,11 @@ type LoginResponse struct {
     Mobile          string 
     Email           string 
     PaymentMethodID int64  
-    Token           string 
+    AuthToken       string 
 }
 
 type SearchParam struct {
-    Token           string    
+    AuthToken       string    
     Name            string
     Limit           int
 }
@@ -55,17 +55,28 @@ type ReserveParam struct {
     Year             string
     ReservationTimes []Time
     PartySize        int
-    Token            string
+    AuthToken        string
     PaymentMethodID  int64
 }
 
 
 type ReserveResponse struct {
     ReservationTime Time
+    ResyToken       string
+}
+
+type CancelParam struct {
+    ResyToken       string
+    AuthToken       string
+}
+
+type CancelResponse struct {
+    Refund          bool
 }
 
 type API interface {
     Login(params LoginParam) (*LoginResponse, error)
     Search(params SearchParam) (*SearchResponse, error)
     Reserve(params ReserveParam) (*ReserveResponse, error)
+    Cancel(params CancelParam) (*CancelResponse, error)
 }

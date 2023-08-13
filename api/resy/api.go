@@ -9,7 +9,6 @@ import (
     "bytes"
     "strconv"
     "strings"
-    "fmt"
 )
 
 type API struct {
@@ -51,8 +50,13 @@ func (a *API) Login(params api.LoginParam) (*api.LoginResponse, error) {
 
     client := &http.Client{}
     response, err := client.Do(request)
+
     if err != nil {
         return nil, err
+    }
+
+    if response.StatusCode == 419 {
+        return nil, api.ErrLoginWrong
     }
 
     defer response.Body.Close()
@@ -75,7 +79,7 @@ func (a *API) Login(params api.LoginParam) (*api.LoginResponse, error) {
         Mobile:          jsonMap["mobile_number"].(string),
         Email:           jsonMap["em_address"].(string),
         PaymentMethodID: int64(jsonMap["payment_method_id"].(float64)),
-        Token:           jsonMap["token"].(string),
+        AuthToken:       jsonMap["token"].(string),
     }
 
     return &loginResponse, nil
@@ -95,8 +99,8 @@ func (a *API) Search(params api.SearchParam) (*api.SearchResponse, error) {
     
     request.Header.Set("Content-Type", "application/json")
     request.Header.Set("Authorization", `ResyAPI api_key="VbWk7s3L4KiK5fzlO7JD3Q5EYolJI7n5"`)
-    request.Header.Set("X-Resy-Auth-Token", params.Token)
-    request.Header.Set("X-Resy-Universal-Auth-Token", params.Token)
+    request.Header.Set("X-Resy-Auth-Token", params.AuthToken)
+    request.Header.Set("X-Resy-Universal-Auth-Token", params.AuthToken)
 
     client := &http.Client{}
     response, err := client.Do(request)
@@ -155,7 +159,7 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
     
     date := params.Year + "-" + params.Month + "-" + params.Day
     dayField := `day=` + date
-    authField := `x-resy-auth-token=` + params.Token
+    authField := `x-resy-auth-token=` + params.AuthToken
     latField := `lat=0`
     longField := `long=0`
     venueIDField := `venue_id=` + strconv.FormatInt(params.VenueID, 10)
@@ -172,8 +176,8 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
     
     request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
     request.Header.Set("Authorization", `ResyAPI api_key="VbWk7s3L4KiK5fzlO7JD3Q5EYolJI7n5"`)
-    request.Header.Set("X-Resy-Auth-Token", params.Token)
-    request.Header.Set("X-Resy-Universal-Auth-Token", params.Token)
+    request.Header.Set("X-Resy-Auth-Token", params.AuthToken)
+    request.Header.Set("X-Resy-Universal-Auth-Token", params.AuthToken)
     request.Header.Set("Referer", "https://resy.com/")
 
 
@@ -222,8 +226,8 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
                 }
                 requestDetail.Header.Set("Authorization", `ResyAPI api_key="VbWk7s3L4KiK5fzlO7JD3Q5EYolJI7n5"`)
                 requestDetail.Header.Set("Host", `api.resy.com`)
-                requestDetail.Header.Set("X-Resy-Auth-Token", params.Token)
-                requestDetail.Header.Set("X-Resy-Universal-Auth-Token", params.Token)
+                requestDetail.Header.Set("X-Resy-Auth-Token", params.AuthToken)
+                requestDetail.Header.Set("X-Resy-Universal-Auth-Token", params.AuthToken)
             
                 responseDetail, err := client.Do(requestDetail)
                 if err != nil {
@@ -256,29 +260,79 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
                 requestBook.Header.Set("Authorization", `ResyAPI api_key="VbWk7s3L4KiK5fzlO7JD3Q5EYolJI7n5"`)
                 requestBook.Header.Set("Content-Type", `application/x-www-form-urlencoded`)
                 requestBook.Header.Set("Host", `api.resy.com`)
-                requestBook.Header.Set("X-Resy-Auth-Token", params.Token)
-                requestBook.Header.Set("X-Resy-Universal-Auth-Token", params.Token)
+                requestBook.Header.Set("X-Resy-Auth-Token", params.AuthToken)
+                requestBook.Header.Set("X-Resy-Universal-Auth-Token", params.AuthToken)
                 requestBook.Header.Set("Referer", "https://resy.com/")
                 responseBook, err := client.Do(requestBook)
                 if err != nil {
                    continue 
                 }
-
+                if responseBook.StatusCode != 201 {
+                    continue
+                }
+ 
                 responseBookBody, err := io.ReadAll(responseBook.Body)
                 if err != nil {
                     continue
                 }
-                if string(responseBook.Status) != "201 Created" {
+
+                err = json.Unmarshal(responseBookBody, &jsonTopLevelMap)
+                if err != nil {
                     continue
                 }
-                return nil, nil
+
+                resp := api.ReserveResponse{
+                    ReservationTime: currentTime,
+                    ResyToken: jsonTopLevelMap["resy_token"].(string),
+                }
+
+                return &resp, nil
 
             }
         }
          
     }
     
-
-
     return nil, api.ErrNoTable 
+}
+
+func (a *API) Cancel(params api.CancelParam) (*api.CancelResponse, error) {
+    cancelUrl := `https://api.resy.com/3/cancel` 
+    resyToken := url.QueryEscape(params.ResyToken)
+    requestBodyStr := "resy_token=" + resyToken
+    request, err := http.NewRequest("POST", cancelUrl, bytes.NewBuffer([]byte(requestBodyStr)))
+    if err != nil {
+        return nil, err
+    }
+    
+    request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+    request.Header.Set("Authorization", `ResyAPI api_key="VbWk7s3L4KiK5fzlO7JD3Q5EYolJI7n5"`)
+    request.Header.Set("X-Resy-Auth-Token", params.AuthToken)
+    request.Header.Set("X-Resy-Universal-Auth-Token", params.AuthToken)
+    request.Header.Set("Referer", "https://resy.com/")
+    request.Header.Set("Origin", "https://resy.com")
+
+
+    client := &http.Client{}
+    response, err := client.Do(request)
+    if err != nil {
+        return nil, err
+    }
+
+    responseBody, err := io.ReadAll(response.Body)
+    if err != nil {
+        return nil, err 
+    }
+
+    defer response.Body.Close()
+    var jsonTopLevelMap map[string]interface{}
+    err = json.Unmarshal(responseBody, &jsonTopLevelMap)
+    if err != nil {
+        return nil, err
+    }
+
+    jsonPaymentMap := jsonTopLevelMap["payment"].(map[string]interface{})
+    jsonTransactionMap := jsonPaymentMap["transaction"].(map[string]interface{})
+    refund := jsonTransactionMap["refund"].(int) == 1
+    return &api.CancelResponse{Refund: refund}, nil
 }
