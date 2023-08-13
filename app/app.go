@@ -6,12 +6,12 @@ import (
 )
 
 var (
-    ErrorPastDate = errors.New("no more reservations possible")
+    ErrorPastDate = errors.New("latest reservation time has passed")
 )
 
 type ReserveAtIntervalParam struct {
-    Email    string
-    Password string
+    Email            string
+    Password         string
     VenueID          int64
     Day              string 
     Month            string 
@@ -23,6 +23,19 @@ type ReserveAtIntervalParam struct {
 }
 
 type ReserveAtTimeParam struct {
+    Email            string
+    Password         string
+    VenueID          int64
+    Day              string 
+    Month            string 
+    Year             string 
+    ReservationTimes []api.Time
+    PartySize        int
+    API              api.API
+    RequestDay       string 
+    RequestMonth     string 
+    RequestYear      string 
+    RequestTime      api.Time
 }
 
 type ReserveAtIntervalResponse struct {
