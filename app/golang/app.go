@@ -55,15 +55,16 @@ func dateStringsToInts(in []string) ([]int, error) {
 
 func isLastTimeFuture(year, month, day, hour, minute int) bool{
     now := time.Now()
-    yrCmp := now.Year() <= year
-    yrEq := now.Year() == year
-    mtCmp := int(now.Month()) <= month
-    mtEq := int(now.Month()) == month
-    dyCmp := now.YearDay() <= day
-    dyEq := now.YearDay() == day
-    hrCmp := now.Hour() <= hour
+    nowYear, nowMonth, nowDay := now.Date()
+    yrCmp := nowYear < year
+    yrEq := nowYear == year
+    mtCmp := int(nowMonth) < month
+    mtEq := int(nowMonth) == month
+    dyCmp := nowDay < day
+    dyEq := nowDay  == day
+    hrCmp := now.Hour() < hour
     hrEq := now.Hour() == hour
-    mnCmp := now.Minute() <= minute
+    mnCmp := now.Minute() < minute
     cmp := yrCmp || 
     (yrEq && mtCmp) || 
     (yrEq && mtEq && dyCmp) || 
