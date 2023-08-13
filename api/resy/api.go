@@ -201,7 +201,6 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
     }
 
 
-
     jsonResultsMap := jsonTopLevelMap["results"].(map[string]interface{}) 
     jsonVenuesList := jsonResultsMap["venues"].([]interface{}) 
     jsonVenueMap := jsonVenuesList[0].(map[string]interface{})
