@@ -153,7 +153,7 @@ func (a *App) ReserveAtTime(params app.ReserveAtTimeParam) (*app.ReserveAtTimeRe
     year := dateInts[2]
     month := dateInts[3] 
     day := dateInts[4]
-    requestTime :=  time.Date(year, time.Month(month), day, hour, minute, 0, 0, time.Local)
+    requestTime :=  time.Date(year, time.Month(month), day, hour, minute, 0, 0, time.UTC)
     time.Sleep(time.Until(requestTime))
 
     loginResp, err := params.API.Login(
