@@ -83,7 +83,7 @@ type API interface {
 }
 
 func (sr *SearchResponse) ToString() (string) {
-    respStr := "Responses:"
+    respStr := "\nResponses:"
     for _, e := range sr.Results {
         respStr += "\n"
         respStr += "\tName: " + e.Name + "\n"

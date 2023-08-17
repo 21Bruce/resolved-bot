@@ -14,7 +14,7 @@ import (
 var (
     ErrNoCmd = errors.New("command does not exist")
     ErrNoFmt = errors.New("improper format")
-    ErrNoName = errors.New("name required for search, use syntex '-n name'")
+    ErrNoName = errors.New("name required for search, use syntax '-n name'")
 )
 type ResolvedCLI struct {
     API     api.API
@@ -27,15 +27,15 @@ var openDelim string  = "["
 var closeDelim string = "]"
  
 func processHelp() (string, error) {
-    helpStr := "Commands: \n" 
-    helpCmd := "help: displays commands"
-    exitCmd := "exit/quit: leaves command prompt"
-    searchCmd := "search [-n name] [-l limit]: " +
+    helpStr := "\nCommands: \n" 
+    helpCmd := "\thelp: displays commands"
+    exitCmd := "\texit/quit: leaves command prompt"
+    searchCmd := "\tsearch [-n name] [-l limit]: " +
     "searches for 'name' and grabs at most 'limit' responses. " +
-    "If name is multiple words long, wrap name with square brackets" + 
+    "\n\tIf name is multiple words long, wrap name with square brackets " + 
     openDelim + 
     closeDelim
-    helpStr += helpCmd + "\n" + exitCmd + "\n" + searchCmd 
+    helpStr += helpCmd + "\n" + exitCmd + "\n" + searchCmd  + "\n"
     return helpStr, nil
 }
 
