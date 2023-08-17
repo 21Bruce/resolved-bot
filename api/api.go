@@ -2,11 +2,13 @@ package api
 
 import (
     "errors"
+    "strconv"
 )
 
 var (
     ErrLoginWrong = errors.New("invalid login credentials")
     ErrNoTable = errors.New("no tables available matching reservation requests")
+    ErrNetwork = errors.New("unknown network error")
 )
 
 type LoginParam struct {
@@ -25,7 +27,6 @@ type LoginResponse struct {
 }
 
 type SearchParam struct {
-    AuthToken       string    
     Name            string
     Limit           int
 }
@@ -79,4 +80,17 @@ type API interface {
     Search(params SearchParam) (*SearchResponse, error)
     Reserve(params ReserveParam) (*ReserveResponse, error)
     Cancel(params CancelParam) (*CancelResponse, error)
+}
+
+func (sr *SearchResponse) ToString() (string) {
+    respStr := "Responses:"
+    for _, e := range sr.Results {
+        respStr += "\n"
+        respStr += "\tName: " + e.Name + "\n"
+        respStr += "\t\tVenueID: " + strconv.FormatInt(e.VenueID, 10) + "\n"
+        respStr += "\t\tRegion: " + e.Region + "\n"
+        respStr += "\t\tLocality: " + e.Locality + "\n"
+        respStr += "\t\tNeighborhood: " + e.Neighborhood +"\n"
+    }
+    return respStr
 }

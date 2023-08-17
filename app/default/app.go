@@ -1,4 +1,4 @@
-package golang
+package default 
 
 import (
     "github.com/21Bruce/resolved-server/api"
