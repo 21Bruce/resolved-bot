@@ -1,4 +1,4 @@
-package default 
+package standard
 
 import (
     "github.com/21Bruce/resolved-server/api"

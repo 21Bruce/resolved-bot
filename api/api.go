@@ -9,6 +9,7 @@ var (
     ErrLoginWrong = errors.New("invalid login credentials")
     ErrNoTable = errors.New("no tables available matching reservation requests")
     ErrNetwork = errors.New("unknown network error")
+    ErrPastDate = errors.New("latest reservation time has passed")
 )
 
 type LoginParam struct {
@@ -42,7 +43,6 @@ type SearchResult struct {
     Locality        string
     Neighborhood    string
 }
-
 
 type Time struct {
     Hour            string
