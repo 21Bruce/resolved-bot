@@ -6,7 +6,7 @@ import (
 )
 
 var (
-    ErrNoCm = errors.New("command unrecognized")
+    ErrNoCmd = errors.New("command unrecognized")
     ErrNoFlg = errors.New("flag unrecognized")
     ErrRpFlg = errors.New("flag repeated")
     ErrNstGrp = errors.New("found nested group attempt")
@@ -14,21 +14,22 @@ var (
 )
 
 type Flag struct {
-    Name    string
+    Name        string
+    Description string
 }
 
 type Command struct {
     Name        string
+    Description string
     Flags       []Flag 
     Handler     func(in map[string][]string)(string, error)
 }
 
-type CLIWrapper struct {
+type ParseCtx struct {
     Commands    []Command
     OpenDelim   string
     CloseDelim  string
 }
-
 
 // Same as split but leaves delim as its own "token". For example
 // splitOn("a/b/c", "/") == []string{"a" "/" "b" "/" "c"}
@@ -44,24 +45,29 @@ func splitOn(in string, delim string) []string {
     return inProc
 }
 
-func (c *CLIWrapper) Tokenize (in string) ([]string, error) {
-    inOpenDelimProc := splitOn(in, c.OpenDelim)
+func (pc *ParseCtx) Tokenize (in string) ([]string, error) {
+    // creates a tokenized slice using input string on open delim
+    inOpenDelimProc := splitOn(in, pc.OpenDelim)
+    // alloc a slice to process close delim tokens
     inCloseDelimProc := make([]string, 0,len(inOpenDelimProc))
-    isGrp := false
-    grpToken := ""
     for _,v := range inOpenDelimProc {
-        closeSplitted := splitOn(v, c.CloseDelim)
+        // check each open delim recognized token for close delims
+        closeSplitted := splitOn(v, pc.CloseDelim)
         inCloseDelimProc = append(inCloseDelimProc, closeSplitted...)
     }
+    // isGrp is a flag indicating we are processing a group token
+    isGrp := false
+    // store group token in grpToken
+    grpToken := ""
     // Arbitrary capacity
     spaceProc := make([]string, 0, 3 * len(inOpenDelimProc))
     for _, dSpltToken := range inCloseDelimProc {
-        if dSpltToken == c.OpenDelim && !isGrp {
+        if dSpltToken == pc.OpenDelim && !isGrp {
             isGrp = true
             grpToken = ""
             continue
         }
-        if dSpltToken == c.CloseDelim && isGrp {
+        if dSpltToken == pc.CloseDelim && isGrp {
             isGrp = false
             spaceProc = append(spaceProc, grpToken)
             continue
@@ -86,7 +92,7 @@ func (c *CLIWrapper) Tokenize (in string) ([]string, error) {
     return spaceProc, nil
 }
 
-func (c *CLIWrapper) parseFlags(cmd Command, tokens []string) (string, error) {
+func (pc *ParseCtx) parseFlags(cmd Command, tokens []string) (string, error) {
     out := make(map[string][]string)
     currFlg := ""
     for _, token := range tokens {
@@ -116,24 +122,23 @@ func (c *CLIWrapper) parseFlags(cmd Command, tokens []string) (string, error) {
     return cmd.Handler(out)
 }
 
-func (c *CLIWrapper) Parse(in string) (string, error) {
-    tokens, err := c.Tokenize(in)
+func (pc *ParseCtx) Parse(in string) (string, error) {
+    tokens, err := pc.Tokenize(in)
 
     if err != nil {
         return "", err
     }
 
     if len(tokens) == 0 {
-        return "", ErrNoCm
+        return "", ErrNoCmd
     }
 
-    for _, cmd := range c.Commands {
+    for _, cmd := range pc.Commands {
         if cmd.Name == tokens[0] {
-            return c.parseFlags(cmd, tokens[1:])
+            return pc.parseFlags(cmd, tokens[1:])
         }
     }
 
-    return "", ErrNoCm
+    return "", ErrNoCmd
 }
-
 
