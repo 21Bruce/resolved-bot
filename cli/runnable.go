@@ -29,19 +29,6 @@ type ResolvedCLI struct {
     parseCtx    ParseCtx
 }
 
-//func processHelp() (string, error) {
-//    helpStr := "\nCommands: \n" 
-//    helpCmd := "\thelp: displays commands"
-//    exitCmd := "\texit/quit: leaves command prompt"
-//    searchCmd := "\tsearch [-n name] [-l limit]: " +
-//    "searches for 'name' and grabs at most 'limit' responses. " +
-//    "\n\tIf name is multiple words long, wrap name with square brackets " + 
-//    openDelim + 
-//    closeDelim
-//    helpStr += helpCmd + "\n" + exitCmd + "\n" + searchCmd  + "\n"
-//    return helpStr, nil
-//}
-
 func validateSearch(in map[string][]string) (string, int, error){
     var err error = nil     
 
@@ -112,6 +99,14 @@ func (c *ResolvedCLI) handleHelp(in map[string][]string) (string, error) {
     return helpStr, nil 
 }
 
+//func validateRats(in map[string][]string) (string, int, error){
+//
+//}
+
+func (c *ResolvedCLI) handleRats(in map[string][]string) (string, error) {
+    return "", nil
+}
+
 func (c *ResolvedCLI) initParseCtx() {
     searchCommand := Command{
         Name: "search",
@@ -127,6 +122,34 @@ func (c *ResolvedCLI) initParseCtx() {
             },
         },
         Handler: c.handleSearch,
+    }
+
+    ratsCommand := Command{
+        Name: "rats",
+        Description: "Reserve At Time Scheduler. Sends a reservation request at the specified time",
+        Flags: []Flag{
+            Flag{
+                Name: "v",
+                Description: "This flag is required. It takes one number input, the id of the restaurant(use search command)",
+            },
+            Flag{
+                Name: "l",
+                Description: "This flag is required. It takes a list of military times in hh:mm:ss format to try to reserve at",
+            },
+            Flag{
+                Name: "d",
+                Description: "This flag is required. It takes a day in yyyy:mm:dd format to try to reserve at",
+            },
+            Flag{
+                Name: "r",
+                Description: "This flag is required. It takes a day and time in yyyy:mm:dd:hh:mm:ss format to begin sending reservation requests at",
+            },
+            Flag{
+                Name: "s",
+                Description: "This flag is optional. It takes a text name as input and uses the venueID from the first result of that search",
+            },
+        },
+        Handler: c.handleRats,
     }
 
     quitCommand := Command{
@@ -155,6 +178,7 @@ func (c *ResolvedCLI) initParseCtx() {
         CloseDelim: "]",
         Commands: []Command{
             searchCommand,
+            ratsCommand,
             quitCommand,
             exitCommand,
             helpCommand,
