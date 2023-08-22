@@ -76,48 +76,12 @@ type CancelResponse struct {
     Refund          bool
 }
 
-type ReserveAtIntervalParam struct {
-    Email            string
-    Password         string
-    VenueID          int64
-    Day              string 
-    Month            string 
-    Year             string 
-    ReservationTimes []Time
-    PartySize        int
-    RepeatInterval   Time
-}
-
-type ReserveAtTimeParam struct {
-    Email            string
-    Password         string
-    VenueID          int64
-    Day              string 
-    Month            string 
-    Year             string 
-    ReservationTimes []Time
-    PartySize        int
-    RequestDay       string 
-    RequestMonth     string 
-    RequestYear      string 
-    RequestTime      Time
-}
-
-type ReserveAtIntervalResponse struct {
-    ReservationTime Time
-}
-
-type ReserveAtTimeResponse struct {
-    ReservationTime Time
-}
 
 type API interface {
     Login(params LoginParam) (*LoginResponse, error)
     Search(params SearchParam) (*SearchResponse, error)
     Reserve(params ReserveParam) (*ReserveResponse, error)
     Cancel(params CancelParam) (*CancelResponse, error)
-    ReserveAtInterval(params ReserveAtIntervalParam) (*ReserveAtIntervalResponse, error)
-    ReserveAtTime(params ReserveAtTimeParam) (*ReserveAtTimeResponse, error)
 }
 
 func (sr *SearchResponse) ToString() (string) {
