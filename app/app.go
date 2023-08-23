@@ -27,8 +27,6 @@ const (
 
 type LoginParam api.LoginParam
 
-type Time app.Time
-
 type AppCtx struct {
     API         api.API
     operations  []Operation    
@@ -63,12 +61,9 @@ type ReserveAtTimeParam struct {
     RequestTime      api.Time
 }
 
-
 type Timeable interface {
     Time() (api.Time)
 }
-
-
 
 type ReserveAtIntervalResponse struct {
     ReservationTime api.Time
@@ -311,8 +306,29 @@ func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan 
     }
 }
 
-func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool) (*ReserveAtTimeResponse, error){
+func (a *AppCtx) ScheduleReserveAtTimeOperation(params ReserveAtTimeParam) (int64, error) {
+    id := a.idGen
+    a.idGen += 1 
+    if (params.Email == "" || params.Password == "") {
+        if(a.loginInfo.Email == "" && a.loginInfo.Password == "") {
+            return 0, ErrNoLogin
+        }
+        params.Email = a.loginInfo.Email
+        params.Password = a.loginInfo.Password
+    }
+    cancel := make(chan bool)
+    output := make(chan OperationResult)
+    a.operations = append(a.operations, Operation{
+        ID: id,
+        Cancel: cancel,
+        Output: output,
+        Status: InProgressStatusType,
+    })
+    go a.reserveAtTime(params, cancel, output)
+    return id, nil
+}
 
+func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, output chan<- OperationResult) {
     dateInts, err := dateStringsToInts([]string{ 
         params.RequestTime.Hour,
         params.RequestTime.Minute,
@@ -322,7 +338,9 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool) (*
     })
 
     if err != nil {
-        return nil, err
+        output <- OperationResult{Response: nil, Err:err}
+        close(output)
+        return
     }
     hour := dateInts[0]
     minute := dateInts[1] 
@@ -330,11 +348,12 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool) (*
     month := dateInts[3] 
     day := dateInts[4]
     requestTime :=  time.Date(year, time.Month(month), day, hour, minute, 0, 0, time.UTC)
-    time.Sleep(time.Until(requestTime))
     select {
     case <-time.After(time.Until(requestTime)):
     case <-cancel:
-        return nil, ErrCancel
+        output<- OperationResult{Response: nil, Err:ErrCancel}
+        close(output)
+        return
     }
     loginResp, err := a.API.Login(
         api.LoginParam{
@@ -343,7 +362,9 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool) (*
         })
     
     if err != nil {
-        return nil, err
+        output<- OperationResult{Response: nil, Err:err}
+        close(output)
+        return
     }
     reserveResp, err := a.API.Reserve(
         api.ReserveParam{
@@ -357,14 +378,16 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool) (*
             VenueID: params.VenueID,
         })
     if err != nil {
-        return nil, err
+        output<- OperationResult{Response: nil, Err:err}
+        close(output)
+        return
     }
     
     returnValue := ReserveAtTimeResponse{ ReservationTime: reserveResp.ReservationTime }
-    return &returnValue, nil
-    
+    output<- OperationResult{Response: returnValue, Err:nil}
+    close(output)
+    return
 }
-
 
 func (a *AppCtx) Login(params LoginParam) (error) {
     reqParams := api.LoginParam{
@@ -388,7 +411,6 @@ func (a *AppCtx) Logout() (error) {
         Email:      "",
         Password:   "",
     }
-
     a.loginInfo = params
     return nil
 }
@@ -426,6 +448,19 @@ func (a *AppCtx) OperationsToString() (string, error) {
         }
     }
     return opLstStr, nil
+}
+
+func (a *AppCtx) OperationStatus(id int64) (OperationStatus, error) {
+    for i, operation := range a.operations {
+        if operation.ID == id {
+            err := a.updateOperationResult(operation.ID)
+            if err != nil {
+                return InProgressStatusType, err
+            }
+            return a.operations[i].Status, nil
+        }
+    }
+    return InProgressStatusType, ErrIdOp
 }
 
 
