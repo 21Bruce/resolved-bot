@@ -463,4 +463,3 @@ func (a *AppCtx) OperationStatus(id int64) (OperationStatus, error) {
     return InProgressStatusType, ErrIdOp
 }
 
-
