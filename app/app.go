@@ -7,6 +7,15 @@ import (
     "strconv"
 )
 
+var (
+    ErrNoOp = errors.New("no operations scheduled")
+    ErrCancel = errors.New("operation cancelled")
+    ErrNoLogin = errors.New("no login default or login credentials provided")
+    ErrNoLogout = errors.New("no login credentials are stored")
+    ErrFinOp = errors.New("operation is not in progress")
+    ErrIdOp = errors.New("no operation has specified id")
+)
+
 type OperationStatus int
 
 const (
@@ -16,18 +25,9 @@ const (
     CancelStatusType 
 )
 
-var (
-    ErrNoOp = errors.New("no operations scheduled")
-    ErrCancel = errors.New("operation cancelled")
-)
-
-type Operation struct{
-    ID      int64
-    Cancel  chan<- bool
-    Status  OperationStatus
-}
-
 type LoginParam api.LoginParam
+
+type Time app.Time
 
 type AppCtx struct {
     API         api.API
@@ -35,7 +35,6 @@ type AppCtx struct {
     loginInfo   LoginParam
     idGen       int64
 }
-
 
 type ReserveAtIntervalParam struct {
     Email            string
@@ -64,12 +63,40 @@ type ReserveAtTimeParam struct {
     RequestTime      api.Time
 }
 
+
+type Timeable interface {
+    Time() (api.Time)
+}
+
+
+
 type ReserveAtIntervalResponse struct {
     ReservationTime api.Time
 }
 
+func (r ReserveAtIntervalResponse) Time() (api.Time) {
+    return r.ReservationTime
+}
+
 type ReserveAtTimeResponse struct {
     ReservationTime api.Time
+}
+
+func (r ReserveAtTimeResponse) Time() (api.Time) {
+    return r.ReservationTime
+}
+
+type OperationResult struct {
+    Response    Timeable    
+    Err         error
+}
+
+type Operation struct{
+    ID      int64
+    Cancel  chan<- bool
+    Output  <-chan OperationResult
+    Result  *OperationResult
+    Status  OperationStatus
 }
 
 func findLastTime(times []api.Time) (*api.Time, error) {
@@ -133,14 +160,80 @@ func isLastTimeFuture(year, month, day, hour, minute int) bool{
     return cmp     
 }
 
-func (a *AppCtx) ScheduleReserveAtInterval(params ReserveAtIntervalParam) (string, error) {
-    
+
+func (a *AppCtx) updateOperationResult (id int64) (error) {
+    for i, operation := range a.operations {
+        if operation.ID == id {
+            if operation.Status == InProgressStatusType {
+                select {
+                case opRes := <-a.operations[i].Output:
+                    a.operations[i].Result = &opRes
+                    if opRes.Err != nil {
+                        a.operations[i].Status = FailStatusType
+                    } else {
+                        a.operations[i].Status = SuccessStatusType
+                    }
+                    return nil
+                default:
+                    return nil
+                }
+            } 
+            return nil
+        }
+    }
+    return ErrIdOp
 }
 
-func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan bool) (*ReserveAtIntervalResponse, error){
+
+func (a *AppCtx) CancelOperation(id int64) (error) {
+    // update before handling
+    err := a.updateOperationResult(id)
+    if err != nil {
+        return err
+    }
+    for i,operation := range a.operations {
+        if (operation.ID == id){
+            if operation.Status != InProgressStatusType {
+                return ErrFinOp 
+            }
+            a.operations[i].Cancel <- true 
+            a.operations[i].Status = CancelStatusType
+            close(a.operations[i].Cancel)
+            return nil
+        }
+    }
+    return ErrIdOp
+}
+
+func (a *AppCtx) ScheduleReserveAtIntervalOperation(params ReserveAtIntervalParam) (int64, error) {
+    id := a.idGen
+    a.idGen += 1 
+    if (params.Email == "" || params.Password == "") {
+        if(a.loginInfo.Email == "" && a.loginInfo.Password == "") {
+            return 0, ErrNoLogin
+        }
+        params.Email = a.loginInfo.Email
+        params.Password = a.loginInfo.Password
+    }
+    cancel := make(chan bool)
+    output := make(chan OperationResult)
+    a.operations = append(a.operations, Operation{
+        ID: id,
+        Cancel: cancel,
+        Output: output,
+        Status: InProgressStatusType,
+    })
+    go a.reserveAtInterval(params, cancel, output)
+    return id, nil
+}
+
+
+func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan bool, output chan<- OperationResult){
     lastTime, err := findLastTime(params.ReservationTimes)
     if err != nil {
-        return nil, err
+        output<-OperationResult{Response: nil, Err: err}     
+        close(output)
+        return
     }
     dateInts, err := dateStringsToInts([]string{ 
         params.RepeatInterval.Hour,
@@ -152,7 +245,9 @@ func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan 
         lastTime.Minute,
     })
     if err != nil {
-        return nil, err
+        output<-OperationResult{Response: nil, Err: err}     
+        close(output)
+        return
     }
     numHrs := dateInts[0]
     numMns := dateInts[1] 
@@ -171,7 +266,9 @@ func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan 
             })
         
         if err != nil {
-            return nil, err
+            output<-OperationResult{Response: nil, Err: err}     
+            close(output)
+            return
         }
         reserveResp, err := a.API.Reserve(
             api.ReserveParam{
@@ -185,7 +282,9 @@ func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan 
                 VenueID: params.VenueID,
             })
         if err != nil && err != api.ErrNoTable {
-            return nil, err
+            output<-OperationResult{Response: nil, Err: err}     
+            close(output)
+            return
         }
         if err == api.ErrNoTable {
            cmp := isLastTimeFuture(year, month, day, hour, minute)
@@ -194,13 +293,21 @@ func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan 
                 case <-time.After(repeatInterval):
                     continue
                 case <-cancel:
-                    return nil, ErrCancel
+                    output<-OperationResult{Response: nil, Err: ErrCancel}     
+                    close(output)
+                    return
                 }
             }
-            return nil, api.ErrPastDate
+            output<-OperationResult{Response: nil, Err: api.ErrPastDate}     
+            close(output)
+            return
         }
-        return &ReserveAtIntervalResponse{ReservationTime: reserveResp.ReservationTime}, nil
-
+        output<-OperationResult{
+            Response: &ReserveAtIntervalResponse{ReservationTime: reserveResp.ReservationTime}, 
+            Err: nil,
+        }
+        close(output)
+        return
     }
 }
 
@@ -273,21 +380,43 @@ func (a *AppCtx) Login(params LoginParam) (error) {
     return nil
 }
 
+func (a *AppCtx) Logout() (error) {
+    if (a.loginInfo.Email == "") && (a.loginInfo.Password == "") {
+        return ErrNoLogout
+    }
+    params := LoginParam{
+        Email:      "",
+        Password:   "",
+    }
+
+    a.loginInfo = params
+    return nil
+}
+
 func (a *AppCtx) OperationsToString() (string, error) {
     if len(a.operations) == 0 {
         return "", ErrNoOp
     }
     opLstStr := "Operations: \n\n"
     for i, operation := range a.operations {
+        // update before handling
+        err := a.updateOperationResult(operation.ID)
+        if err != nil {
+            return "", err
+        }
         opLstStr += "\tID: " + strconv.FormatInt(operation.ID, 10) + "\n" 
         opLstStr += "\tStatus: " 
         switch operation.Status {
             case InProgressStatusType:
                 opLstStr += "In Progress"
             case SuccessStatusType:
-                opLstStr += "Succeeded"
+                time := operation.Result.Response.Time()
+                opLstStr += "Succeeded\n"
+                opLstStr += "\tResult: " + time.Hour + ":" + time.Minute 
             case FailStatusType:
-                opLstStr += "Failed"
+                err := operation.Result.Err.Error()
+                opLstStr += "Failed\n"
+                opLstStr += "\tResult: " + err 
             case CancelStatusType:
                 opLstStr += "Cancelled"
         }
