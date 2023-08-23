@@ -293,7 +293,7 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
                 }
 
                 if isCodeFail(responseBook.StatusCode) {
-                    return nil, api.ErrNetwork
+                    continue
                 }
 
                 responseBookBody, err := io.ReadAll(responseBook.Body)
