@@ -14,6 +14,7 @@ var (
     ErrNoLogout = errors.New("no login credentials are stored")
     ErrFinOp = errors.New("operation is not in progress")
     ErrIdOp = errors.New("no operation has specified id")
+    ErrTimeFut = errors.New("provided time has passed")
 )
 
 type OperationStatus int
@@ -135,7 +136,27 @@ func dateStringsToInts(in []string) ([]int, error) {
     return out, nil
 }
 
-func isLastTimeFuture(year, month, day, hour, minute int) bool{
+func isTimeUTCFuture(year, month, day, hour, minute int) bool{
+    now := time.Now().UTC()
+    nowYear, nowMonth, nowDay := now.Date()
+    yrCmp := nowYear < year
+    yrEq := nowYear == year
+    mtCmp := int(nowMonth) < month
+    mtEq := int(nowMonth) == month
+    dyCmp := nowDay < day
+    dyEq := nowDay  == day
+    hrCmp := now.Hour() < hour
+    hrEq := now.Hour() == hour
+    mnCmp := now.Minute() < minute
+    cmp := yrCmp || 
+    (yrEq && mtCmp) || 
+    (yrEq && mtEq && dyCmp) || 
+    (yrEq && mtEq && dyEq && hrCmp) ||
+    (yrEq && mtEq && dyEq && hrEq && mnCmp) 
+    return cmp     
+}
+
+func isTimeLocalFuture(year, month, day, hour, minute int) bool{
     now := time.Now()
     nowYear, nowMonth, nowDay := now.Date()
     yrCmp := nowYear < year
@@ -282,7 +303,7 @@ func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan 
             return
         }
         if err == api.ErrNoTable {
-           cmp := isLastTimeFuture(year, month, day, hour, minute)
+           cmp := isTimeLocalFuture(year, month, day, hour, minute)
            if cmp {
                 select {
                 case <-time.After(repeatInterval):
@@ -347,6 +368,11 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, ou
     year := dateInts[2]
     month := dateInts[3] 
     day := dateInts[4]
+    if !isTimeUTCFuture(year, month, day, hour, minute) {
+        output <- OperationResult{Response: nil, Err: ErrTimeFut}     
+        close(output)
+        return
+    }
     requestTime :=  time.Date(year, time.Month(month), day, hour, minute, 0, 0, time.UTC)
     select {
     case <-time.After(time.Until(requestTime)):
