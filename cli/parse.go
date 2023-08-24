@@ -5,24 +5,39 @@ import (
     "errors"
 )
 
+const (
+    InfiniteArgs = -1
+)
+
 var (
     ErrNoCmd = errors.New("command unrecognized")
     ErrNoFlg = errors.New("flag unrecognized")
     ErrRpFlg = errors.New("flag repeated")
     ErrNstGrp = errors.New("found nested group attempt")
     ErrNoGrp = errors.New("unclosed group")
+    ErrMissReq = errors.New("missing required flag")
+    ErrMulArg = errors.New("too many arguments for a flag")
+    ErrNoArg = errors.New("too few arguments for a flag")
 )
 
+type FlagValidationCtx struct{
+    MaxArgs     int    
+    MinArgs     int
+    Required    bool
+}
+
 type Flag struct {
-    Name        string
-    Description string
+    Name            string
+    LongName        string
+    Description     string
+    ValidationCtx   FlagValidationCtx
 }
 
 type Command struct {
-    Name        string
-    Description string
-    Flags       []Flag 
-    Handler     func(in map[string][]string)(string, error)
+    Name            string
+    Description     string
+    Flags           []Flag 
+    Handler         func(in map[string][]string)(string, error)
 }
 
 type ParseCtx struct {
@@ -96,7 +111,23 @@ func (pc *ParseCtx) parseFlags(cmd Command, tokens []string) (string, error) {
     out := make(map[string][]string)
     currFlg := ""
     for _, token := range tokens {
-        if len(token) > 1 && string(token[0]) == "-"{
+        if len(token) > 2 && string(token[0:2]) == "--" {
+            didFnd := false
+            for _, flag := range cmd.Flags {
+                if flag.LongName != "" &&  flag.LongName == string(token[2:]) {
+                    if out[flag.Name] != nil {
+                        return "", ErrRpFlg
+                    }
+                    currFlg = flag.Name
+                    out[currFlg] = make([]string, 0)
+                    didFnd = true
+                    break
+                }
+            }
+            if didFnd {
+                continue 
+            }
+        } else if len(token) > 1 && string(token[0]) == "-"{
             didFnd := false
             for _, flag := range cmd.Flags {
                 if flag.Name == string(token[1:]) {
@@ -119,7 +150,30 @@ func (pc *ParseCtx) parseFlags(cmd Command, tokens []string) (string, error) {
         out[currFlg] = append(out[currFlg], token)
     }
 
+    err := pc.validation(cmd, out)
+
+    if err != nil {
+        return "", err
+    }
+
     return cmd.Handler(out)
+}
+
+func (pc *ParseCtx) validation(cmd Command, in map[string][]string) (error){
+    for _, flag := range cmd.Flags {
+        if flag.ValidationCtx.Required && in[flag.Name] == nil {
+            return ErrMissReq
+        }
+        if in[flag.Name] != nil {
+            if flag.ValidationCtx.MaxArgs != InfiniteArgs && len(in[flag.Name]) > flag.ValidationCtx.MaxArgs {
+                return ErrMulArg
+            }
+            if len(in[flag.Name]) < flag.ValidationCtx.MinArgs {
+                return ErrNoArg
+            }
+        }
+    }
+    return nil
 }
 
 func (pc *ParseCtx) Parse(in string) (string, error) {
