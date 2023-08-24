@@ -5,6 +5,10 @@ import (
     "errors"
 )
 
+const (
+    InfiniteArgs = -1
+)
+
 var (
     ErrNoCmd = errors.New("command unrecognized")
     ErrNoFlg = errors.New("flag unrecognized")
@@ -13,16 +17,24 @@ var (
     ErrNoGrp = errors.New("unclosed group")
 )
 
+type FlagValidationCtx struct{
+    MaxArgs     int    
+    MinArgs     int
+    Required    bool
+}
+
 type Flag struct {
-    Name        string
-    Description string
+    Name            string
+    LongName        string
+    Description     string
+    ValidationCtx   FlagValidationCtx
 }
 
 type Command struct {
-    Name        string
-    Description string
-    Flags       []Flag 
-    Handler     func(in map[string][]string)(string, error)
+    Name            string
+    Description     string
+    Flags           []Flag 
+    Handler         func(in map[string][]string)(string, error)
 }
 
 type ParseCtx struct {
@@ -96,7 +108,23 @@ func (pc *ParseCtx) parseFlags(cmd Command, tokens []string) (string, error) {
     out := make(map[string][]string)
     currFlg := ""
     for _, token := range tokens {
-        if len(token) > 1 && string(token[0]) == "-"{
+        if len(token) > 2 && string(token[0:2]) == "--" {
+            didFnd := false
+            for _, flag := range cmd.Flags {
+                if flag.LongName != "" &&  flag.LongName == string(token[2:]) {
+                    if out[flag.Name] != nil {
+                        return "", ErrRpFlg
+                    }
+                    currFlg = flag.Name
+                    out[currFlg] = make([]string, 0)
+                    didFnd = true
+                    break
+                }
+            }
+            if didFnd {
+                continue 
+            }
+        } else if len(token) > 1 && string(token[0]) == "-"{
             didFnd := false
             for _, flag := range cmd.Flags {
                 if flag.Name == string(token[1:]) {
@@ -118,6 +146,12 @@ func (pc *ParseCtx) parseFlags(cmd Command, tokens []string) (string, error) {
         }
         out[currFlg] = append(out[currFlg], token)
     }
+
+//    err := pc.validation(out)
+//
+//    if err != nil {
+//        return "", err
+//    }
 
     return cmd.Handler(out)
 }
