@@ -13,6 +13,7 @@ var (
     ErrNoLogin = errors.New("no login default or login credentials provided")
     ErrNoLogout = errors.New("no login credentials are stored")
     ErrFinOp = errors.New("operation is not in progress")
+    ErrCurrOp = errors.New("operation is in progress")
     ErrIdOp = errors.New("no operation has specified id")
     ErrTimeFut = errors.New("provided time has passed")
 )
@@ -27,6 +28,10 @@ const (
 )
 
 type LoginParam api.LoginParam
+
+type SearchParam api.SearchParam
+
+type SearchResponse api.SearchResponse
 
 type AppCtx struct {
     API         api.API
@@ -416,10 +421,7 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, ou
 }
 
 func (a *AppCtx) Login(params LoginParam) (error) {
-    reqParams := api.LoginParam{
-        Email:      params.Email,
-        Password:   params.Password,
-    }
+    reqParams := api.LoginParam(params)
     _, err :=  a.API.Login(reqParams)
     if err != nil {
         return err
@@ -427,6 +429,33 @@ func (a *AppCtx) Login(params LoginParam) (error) {
 
     a.loginInfo = params
     return nil
+}
+
+func (a *AppCtx) Search(params SearchParam) (*SearchResponse, error) {
+    reqParams := api.SearchParam(params)
+    resp, err :=  a.API.Search(reqParams)
+    if err != nil {
+        return nil, err
+    }
+    returnValue := SearchResponse(*resp)
+    return &returnValue, nil
+}
+
+func (a *AppCtx) CleanOperation(id int64) (error) {
+    for i, operation := range a.operations {
+        if operation.ID == id {
+            err := a.updateOperationResult(operation.ID)
+            if err != nil {
+                return err
+            }
+            if a.operations[i].Status == InProgressStatusType {
+                return ErrCurrOp
+            }
+            a.operations = append(a.operations[:i], a.operations[i+1:]...)
+            return nil
+        }
+    }
+    return ErrIdOp
 }
 
 func (a *AppCtx) Logout() (error) {
