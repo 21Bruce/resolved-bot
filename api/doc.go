@@ -1,0 +1,5 @@
+/*
+package api is the abstraction layer for interacting with the reservation services. All services
+implementing the API interface are subpackages of api
+*/
+package api
