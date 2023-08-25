@@ -10,8 +10,8 @@ body:
       description: Please ensure that there is no issues for this feature already exist
       options:  
         - label: I have searched for this issue
-      validations:
-        required: true
+    validations:
+      required: true
   - type: textarea 
     id: feature-problem
     attributes:
