@@ -10,6 +10,6 @@ Steps to build:
 
 1. Install the go programming language, this can be done by searching "golang installation"
 2. clone this repository
-3. run 'go build' in root directory of project 
+3. run `go build` in root directory of project 
 
 
