@@ -5,7 +5,7 @@ labels: ["bug"]
 body:
   - type: checkboxes
     id: new-bug
-     attributes:
+    attributes:
       label: Is there an existing issue for this bug?
       description: Please ensure that there is no issues for this bug already
       options:  
