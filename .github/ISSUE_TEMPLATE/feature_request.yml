@@ -1,0 +1,41 @@
+name: Feature Request
+description: File a feature request by filling out the following
+title: "[FEATURE]: "
+labels: ["feature"] 
+body:
+  - type: checkboxes
+      id: new-feature
+      attributes:
+        label: Is there an existing issue for this feature?
+        description: Please ensure that there is no issues for this feature already exist
+        options:  
+          - label: I have searched for this issue
+            required: true
+  - type: textarea 
+      id: feature-problem
+      attributes:
+        label: Description of the problem 
+        description: Describe the problem that you have and potential groups effected by it (i.e. developers, users, etc.)
+        validations:
+          required: true  
+  - type: textarea 
+      id: feature-plan 
+      attributes:
+        label: Planned Solution
+        description: Describe the solution you have formulated at an overhead level
+        validations:
+          required: true  
+  - type: textarea 
+      id: feature-alternatives
+      attributes:
+        label: Alternatives 
+        description: Describe the alternatives you have considered or are considering, and why you chose your solution over these alternatives
+        validations:
+          required: true
+  - type: textarea 
+      id: feature-specifics
+      attributes:
+        label: Solution Specifics
+        description: Describe any specific components, algorithms, or any other nitty-gritty ideas you are considering using to implement your solution
+        validations:
+          required: true
