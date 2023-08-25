@@ -4,25 +4,25 @@ title: "[BUG]: "
 labels: ["bug"] 
 body:
   - type: checkboxes
-      id: new-bug
-      attributes:
-        label: Is there an existing issue for this bug?
-        description: Please ensure that there is no issues for this bug already
-        options:  
-          - label: I have searched for this issue
-            required: true
+    id: new-bug
+     attributes:
+      label: Is there an existing issue for this bug?
+      description: Please ensure that there is no issues for this bug already
+      options:  
+        - label: I have searched for this issue
+          required: true
   - type: textarea 
-      id: bug-description
-      attributes:
-        label: Description of the bug 
-        description: Describe the bug that occured and the expected behavior 
-        validations:
-          required: true  
+    id: bug-description
+    attributes:
+      label: Description of the bug 
+      description: Describe the bug that occured and the expected behavior 
+      validations:
+        required: true  
   - type: textarea 
-      id: bug-steps 
-      attributes:
-        label: Steps to reproduce 
-        description: Step by step procedure to reproduce the bug
-        placeholder: Write steps in list form
-        validations:
-          required: true  
+    id: bug-steps 
+    attributes:
+      label: Steps to reproduce 
+      description: Step by step procedure to reproduce the bug
+      placeholder: Write steps in list form
+      validations:
+        required: true  
