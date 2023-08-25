@@ -51,7 +51,8 @@ func (c *ResolvedCLI) handleSearch(in map[string][]string) (string, error) {
     if err != nil {
         return "", err
     }
-    return resp.ToString(), nil
+    retVal := api.SearchResponse(*resp)
+    return retVal.ToString(), nil
 }
 
 func (c *ResolvedCLI) handleQuit(in map[string][]string) (string, error) {
