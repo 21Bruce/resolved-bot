@@ -1,7 +1,7 @@
 name: Feature Request
 description: File a feature request by filling out the following
 title: "[FEATURE]: "
-labels: ["feature"] 
+labels: ["enhancement"] 
 body:
   - type: checkboxes
     id: new-feature
