@@ -30,6 +30,7 @@ Here is an example use of a search using a name of carbone and limit of 5:
 ![Screenshot 2023-08-25 at 10 47 23 PM](https://github.com/21Bruce/resolved-server/assets/57542085/835fecb6-b53b-457a-a861-c0eafe90d09a)
 
 What if the restaurant name has spaces? Just wrap it in square brackets. In this next example, we'll search for "double chicken please":
+
 ![Screenshot 2023-08-25 at 10 50 29 PM](https://github.com/21Bruce/resolved-server/assets/57542085/636f5ab9-c7c5-4a22-b8c3-737515e4f417)
 
 The purpose of searching is to obtain the `VenueID`. This number is a unique identifier that resy uses to find the restaurant that you want to reserve at, since multiple restaurants can have the same name.
