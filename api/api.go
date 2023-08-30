@@ -57,8 +57,7 @@ type ReserveParam struct {
     Year             string
     ReservationTimes []Time
     PartySize        int
-    AuthToken        string
-    PaymentMethodID  int64
+    LoginResp        LoginResponse
 }
 
 
