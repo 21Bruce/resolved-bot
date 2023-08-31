@@ -14,8 +14,11 @@ var (
 )
 
 type LoginParam struct {
-    Email string
-    Password string
+    FirstName       string 
+    LastName        string 
+    Mobile          string 
+    Email           string
+    Password        string
 }
 
 type LoginResponse struct {
@@ -48,7 +51,7 @@ type SearchResult struct {
 type Time struct {
     Hour            string
     Minute          string
- }
+}
 
 type ReserveParam struct {
     VenueID          int64
@@ -60,27 +63,14 @@ type ReserveParam struct {
     LoginResp        LoginResponse
 }
 
-
 type ReserveResponse struct {
     ReservationTime Time
-    ResyToken       string
 }
-
-type CancelParam struct {
-    ResyToken       string
-    AuthToken       string
-}
-
-type CancelResponse struct {
-    Refund          bool
-}
-
 
 type API interface {
     Login(params LoginParam) (*LoginResponse, error)
     Search(params SearchParam) (*SearchResponse, error)
     Reserve(params ReserveParam) (*ReserveResponse, error)
-    Cancel(params CancelParam) (*CancelResponse, error)
 }
 
 func (sr *SearchResponse) ToString() (string) {
