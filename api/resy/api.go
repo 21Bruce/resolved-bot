@@ -39,6 +39,12 @@ func min(a,b int) (int) {
     return b
 }
 
+func GetDefaultAPI() (API){
+    return API{
+        APIKey: "VbWk7s3L4KiK5fzlO7JD3Q5EYolJI7n5",
+    }
+}
+
 func (a *API) Login(params api.LoginParam) (*api.LoginResponse, error) {
     authUrl := "https://api.resy.com/3/auth/password"
     email := url.QueryEscape(params.Email)
