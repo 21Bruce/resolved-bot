@@ -41,8 +41,7 @@ type AppCtx struct {
 }
 
 type ReserveAtIntervalParam struct {
-    Email            string
-    Password         string
+    Login            LoginParam
     VenueID          int64
     Day              string 
     Month            string 
@@ -53,8 +52,7 @@ type ReserveAtIntervalParam struct {
 }
 
 type ReserveAtTimeParam struct {
-    Email            string
-    Password         string
+    Login            LoginParam
     VenueID          int64
     Day              string 
     Month            string 
@@ -181,7 +179,6 @@ func isTimeLocalFuture(year, month, day, hour, minute int) bool{
     return cmp     
 }
 
-
 func (a *AppCtx) updateOperationResult (id int64) (error) {
     for i, operation := range a.operations {
         if operation.ID == id {
@@ -204,7 +201,6 @@ func (a *AppCtx) updateOperationResult (id int64) (error) {
     }
     return ErrIdOp
 }
-
 
 func (a *AppCtx) CancelOperation(id int64) (error) {
     // update before handling
@@ -229,12 +225,12 @@ func (a *AppCtx) CancelOperation(id int64) (error) {
 func (a *AppCtx) ScheduleReserveAtIntervalOperation(params ReserveAtIntervalParam) (int64, error) {
     id := a.idGen
     a.idGen += 1 
-    if (params.Email == "" || params.Password == "") {
+    if (params.Login.Email == "" || params.Login.Password == "") {
         if(a.loginInfo.Email == "" && a.loginInfo.Password == "") {
             return 0, ErrNoLogin
         }
-        params.Email = a.loginInfo.Email
-        params.Password = a.loginInfo.Password
+        params.Login.Email = a.loginInfo.Email
+        params.Login.Password = a.loginInfo.Password
     }
     cancel := make(chan bool)
     output := make(chan OperationResult)
@@ -247,7 +243,6 @@ func (a *AppCtx) ScheduleReserveAtIntervalOperation(params ReserveAtIntervalPara
     go a.reserveAtInterval(params, cancel, output)
     return id, nil
 }
-
 
 func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan bool, output chan<- OperationResult){
     lastTime, err := findLastTime(params.ReservationTimes)
@@ -277,14 +272,9 @@ func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan 
     day := dateInts[4]
     hour := dateInts[5] 
     minute := dateInts[6] 
-
     repeatInterval := time.Hour * time.Duration(numHrs) + time.Minute * time.Duration(numMns)
     for {
-        loginResp, err := a.API.Login(
-            api.LoginParam{
-                Email: params.Email,
-                Password: params.Password,
-            })
+        loginResp, err := a.API.Login(api.LoginParam(params.Login))
         
         if err != nil {
             output<-OperationResult{Response: nil, Err: err}     
@@ -293,13 +283,12 @@ func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan 
         }
         reserveResp, err := a.API.Reserve(
             api.ReserveParam{
-                AuthToken: loginResp.AuthToken,
+                LoginResp: *loginResp,
                 Day: params.Day,
                 Month: params.Month,
                 Year: params.Year,
                 ReservationTimes: params.ReservationTimes,
                 PartySize: params.PartySize,
-                PaymentMethodID: loginResp.PaymentMethodID,
                 VenueID: params.VenueID,
             })
         if err != nil && err != api.ErrNoTable {
@@ -335,12 +324,12 @@ func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan 
 func (a *AppCtx) ScheduleReserveAtTimeOperation(params ReserveAtTimeParam) (int64, error) {
     id := a.idGen
     a.idGen += 1 
-    if (params.Email == "" || params.Password == "") {
+    if (params.Login.Email == "" || params.Login.Password == "") {
         if(a.loginInfo.Email == "" && a.loginInfo.Password == "") {
             return 0, ErrNoLogin
         }
-        params.Email = a.loginInfo.Email
-        params.Password = a.loginInfo.Password
+        params.Login.Email = a.loginInfo.Email
+        params.Login.Password = a.loginInfo.Password
     }
     cancel := make(chan bool)
     output := make(chan OperationResult)
@@ -362,7 +351,6 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, ou
         params.RequestMonth,
         params.RequestDay,
     })
-
     if err != nil {
         output <- OperationResult{Response: nil, Err:err}
         close(output)
@@ -386,11 +374,7 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, ou
         close(output)
         return
     }
-    loginResp, err := a.API.Login(
-        api.LoginParam{
-            Email: params.Email,
-            Password: params.Password,
-        })
+    loginResp, err := a.API.Login(api.LoginParam(params.Login))
     
     if err != nil {
         output<- OperationResult{Response: nil, Err:err}
@@ -399,13 +383,12 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, ou
     }
     reserveResp, err := a.API.Reserve(
         api.ReserveParam{
-            AuthToken: loginResp.AuthToken,
+            LoginResp: *loginResp,
             Day: params.Day,
             Month: params.Month,
             Year: params.Year,
             ReservationTimes: params.ReservationTimes,
             PartySize: params.PartySize,
-            PaymentMethodID: loginResp.PaymentMethodID,
             VenueID: params.VenueID,
         })
     if err != nil {
@@ -426,7 +409,6 @@ func (a *AppCtx) Login(params LoginParam) (error) {
     if err != nil {
         return err
     }
-
     a.loginInfo = params
     return nil
 }
@@ -462,10 +444,7 @@ func (a *AppCtx) Logout() (error) {
     if (a.loginInfo.Email == "") && (a.loginInfo.Password == "") {
         return ErrNoLogout
     }
-    params := LoginParam{
-        Email:      "",
-        Password:   "",
-    }
+    params := LoginParam{}
     a.loginInfo = params
     return nil
 }
@@ -517,4 +496,3 @@ func (a *AppCtx) OperationStatus(id int64) (OperationStatus, error) {
     }
     return InProgressStatusType, ErrIdOp
 }
-

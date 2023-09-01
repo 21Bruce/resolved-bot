@@ -92,10 +92,10 @@ func (c *ResolvedCLI) handleList(in map[string][]string) (string, error) {
 func (c *ResolvedCLI) parseRats(in map[string][]string) (*app.ReserveAtTimeParam, error) {
     req := app.ReserveAtTimeParam{}
     if in["e"] != nil {
-        req.Email = in["e"][0]
+        req.Login.Email = in["e"][0]
     }
     if in["p"] != nil {
-        req.Password = in["p"][0]
+        req.Login.Password = in["p"][0]
     }
     id, err := strconv.ParseInt(in["v"][0], 10, 64)
     if err != nil {
@@ -180,10 +180,10 @@ func (c *ResolvedCLI) handleRats(in map[string][]string) (string, error) {
 func (c *ResolvedCLI) parseRais(in map[string][]string) (*app.ReserveAtIntervalParam, error) {
     req := app.ReserveAtIntervalParam{}
     if in["e"] != nil {
-        req.Email = in["e"][0]
+        req.Login.Email = in["e"][0]
     }
     if in["p"] != nil {
-        req.Password = in["p"][0]
+        req.Login.Password = in["p"][0]
     }
     id, err := strconv.ParseInt(in["v"][0], 10, 64)
     if err != nil {
