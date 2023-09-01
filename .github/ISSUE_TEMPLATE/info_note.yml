@@ -1,0 +1,12 @@
+name: Info Note
+description: Leave a general note for sharing info / discussing something
+title: "[INFO]: "
+labels: ["information"] 
+body:
+  - type: textarea 
+    id: information 
+    attributes:
+      label: Information to share 
+      description: Describe the info you want people to know about 
+    validations:
+      required: true  
