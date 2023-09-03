@@ -3,7 +3,7 @@
 
 General Purpose: 
 
-    The resy pkg is an implementatio of the 'API' interface using resy
+    The resy pkg is an implementation of the 'API' interface using resy
     as an external reservation service. This documentation dives into
     the specifics on how we implement that api spec with Resy.
 
