@@ -1,5 +1,5 @@
 name: Bug Report
-description: File a Bug Report by filling out the following
+description: File a bug report by filling out the following
 title: "[BUG]: "
 labels: ["bug"] 
 body:
@@ -27,3 +27,15 @@ body:
       placeholder: Write steps in list form
     validations:
       required: true  
+  - type: textarea 
+    id: bug-spec 
+    attributes:
+      label: System Specs
+      description: Specification of system that the bug occured on
+    validations:
+      required: true  
+  - type: textarea 
+    id: bug-add-ctx 
+    attributes:
+      label: Additional Context
+      description: Write any additional facts that you think might be helpful here    
