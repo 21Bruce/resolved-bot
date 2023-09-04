@@ -93,7 +93,6 @@ type SearchResult struct {
     Neighborhood    string
 }
 
-
 /*
 Name: Time
 Type: API Input Struct
