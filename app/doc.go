@@ -37,7 +37,7 @@ Public API:
               must be in UTC. The func returns an id of the running 
               operation on success
 
-        3. CancelOperation(id int64)(error) 
+        3. CancelOperation(int64)(error) 
 
             - Description: This func takes in an id and attempts to
               cancel it.
@@ -55,7 +55,7 @@ Public API:
               a name and a potential limit and returns a set of 
               responses
 
-        6. CleanOperation(id int64)(error) 
+        6. CleanOperation(int64)(error) 
 
             - Description: This func takes in an id and on success
               removes its associated operation from the internal
@@ -70,6 +70,12 @@ Public API:
 
             - Description: Stringifies the internal list
               of operations
+
+        9. OperationStatus(int64)(OperationStatus, error) 
+
+            - Description: Returns status corresponding to
+              operation
+
 
 **********************************************************************
 
