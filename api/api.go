@@ -1,3 +1,7 @@
+/*
+Author: Bruce Jagid
+Created On: Aug 21, 2023
+*/
 package api
 
 import (
@@ -13,6 +17,24 @@ var (
     ErrTimeNull = errors.New("times list empty")
 )
 
+/*
+Name: LoginParam
+Type: API Func Input Struct
+Purpose: Input parameters for the api function 'Login'
+Note: LoginParam is meant to hide login details from the app layer,
+but each individual external service has different login requirements.
+
+Field Requirements for Resy:
+    - Email: string 
+    - Password: string 
+
+Field Requirements for Opentable:
+    - FirstName: string 
+    - LastName: string
+    - Email: string
+    - Mobile: string, omitting dashes and region indicator(i.e. the +1 for US)
+
+*/
 type LoginParam struct {
     FirstName       string 
     LastName        string 
@@ -21,6 +43,14 @@ type LoginParam struct {
     Password        string
 }
 
+/*
+Name: LoginResponse
+Type: API Func Output Struct
+Purpose: Output information for the api function 'Login'
+Note: LoginResponse is only meant to be used as an input to the 'Reserve' api function,
+and its internals are subject to change with any update, so no code should be written on
+another layer relying on the fields of this data structure
+*/
 type LoginResponse struct {
     ID              int64  
     FirstName       string 
@@ -31,15 +61,30 @@ type LoginResponse struct {
     AuthToken       string 
 }
 
+/*
+Name: SeachParam 
+Type: API Func Input Struct
+Purpose: Input information to the 'Search' api function 
+*/
 type SearchParam struct {
     Name            string
     Limit           int
 }
 
+/*
+Name: SeachResponse
+Type: API Func Output Struct
+Purpose: Output information from 'Search' api function 
+*/
 type SearchResponse struct {
     Results []SearchResult
 }
 
+/*
+Name: SeachResult
+Type: API Output Struct
+Purpose: Output specific results from 'Search' api function 
+*/
 type SearchResult struct {
     VenueID         int64 
     Name            string
@@ -48,11 +93,22 @@ type SearchResult struct {
     Neighborhood    string
 }
 
+
+/*
+Name: Time
+Type: API Input Struct
+Purpose: Provide a go indepent struct for representing time
+*/
 type Time struct {
     Hour            string
     Minute          string
 }
 
+/*
+Name: ReserveParam
+Type: API Func Input Struct
+Purpose: Input information to the 'Reserve' api function 
+*/
 type ReserveParam struct {
     VenueID          int64
     Day              string
@@ -63,16 +119,34 @@ type ReserveParam struct {
     LoginResp        LoginResponse
 }
 
+/*
+Name: ReserveResponse
+Type: API Func Output Struct
+Purpose: Output information from the 'Reserve' api function 
+*/
 type ReserveResponse struct {
     ReservationTime Time
 }
 
+/*
+Name: API 
+Type: Interface 
+Purpose: Provide a minimal enough abstraction of common behavior
+among external reservation services to allow cross-platform
+application production
+*/
 type API interface {
     Login(params LoginParam) (*LoginResponse, error)
     Search(params SearchParam) (*SearchResponse, error)
     Reserve(params ReserveParam) (*ReserveResponse, error)
 }
 
+/*
+Name: SearchResponse.ToString 
+Type: Stringify Func
+Purpose: Provide a default string representation of search
+responses amongst consumers of this layer 
+*/
 func (sr *SearchResponse) ToString() (string) {
     respStr := "\nResponses:"
     for _, e := range sr.Results {

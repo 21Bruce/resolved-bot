@@ -1,3 +1,7 @@
+/*
+Author: Bruce Jagid
+Created On: Aug 12, 2023
+*/
 package resy 
 
 import (
@@ -11,15 +15,38 @@ import (
     "strings"
 )
 
+/*
+Name: API
+Type: API interface struct
+Purpose: This struct acts as the resy implementation of the 
+api interface. 
+Note: The only known working APIKey value can be located and
+defaulted using the GetDefaultAPI function, but we leave
+it exposed so front-facing wrappers may expose it as a
+setting
+*/
 type API struct {
     APIKey      string 
 }
 
+/*
+Name: isCodeFail 
+Type: Internal Func 
+Purpose: Function which takes in an HTTP code and returns
+true if it is not a success code and false otherwise
+*/
 func isCodeFail(code int) (bool) {
     fst := code / 100
     return (fst != 2)  
 }
 
+/*
+Name: byteToJSONString 
+Type: Internal Func 
+Purpose: Function which takes in a byte sequence 
+representing a JSON struct and returns a string 
+or error. Useful for debugging
+*/
 func byteToJSONString(data []byte) (string, error) {
     var out bytes.Buffer
     err := json.Indent(&out, data, "", " ")
@@ -32,6 +59,11 @@ func byteToJSONString(data []byte) (string, error) {
     return string(d), nil
 }
 
+/*
+Name: min 
+Type: Internal Func 
+Purpose: Function that determins the min of two ints
+*/
 func min(a,b int) (int) {
     if a < b {
         return a
@@ -39,12 +71,25 @@ func min(a,b int) (int) {
     return b
 }
 
+/*
+Name: GetDefaultAPI 
+Type: External Func 
+Purpose: Function that provides an out of the box
+working API struct
+*/
 func GetDefaultAPI() (API){
     return API{
         APIKey: "VbWk7s3L4KiK5fzlO7JD3Q5EYolJI7n5",
     }
 }
 
+/*
+Name: Login 
+Type: API Func 
+Purpose: Resy implementation of the Login api func
+Note: The only required login fields for this func 
+are Email and Password.
+*/
 func (a *API) Login(params api.LoginParam) (*api.LoginResponse, error) {
     authUrl := "https://api.resy.com/3/auth/password"
     email := url.QueryEscape(params.Email)
@@ -67,6 +112,7 @@ func (a *API) Login(params api.LoginParam) (*api.LoginResponse, error) {
         return nil, err
     }
 
+    // Resy servers return a 419 is the auth parameters were invalid
     if response.StatusCode == 419 {
         return nil, api.ErrLoginWrong
     }
@@ -102,6 +148,11 @@ func (a *API) Login(params api.LoginParam) (*api.LoginResponse, error) {
 
 }
 
+/*
+Name: Search 
+Type: API Func 
+Purpose: Resy implementation of the Search api func
+*/
 func (a *API) Search(params api.SearchParam) (*api.SearchResponse, error) {
     searchUrl := "https://api.resy.com/3/venuesearch/search"
 
@@ -143,10 +194,11 @@ func (a *API) Search(params api.SearchParam) (*api.SearchResponse, error) {
     }
 
     jsonSearchMap := jsonTopLevelMap["search"].(map[string]interface{})
-    //numHits := int(jsonSearchMap["nbHits"].(float64))
 
     jsonHitsMap := jsonSearchMap["hits"].([]interface{}) 
     numHits := len(jsonHitsMap)
+
+    // if input param limit is nonnegative, limit the search loop
     var limit int 
     if params.Limit > 0 {
         limit = min(params.Limit, numHits)
@@ -176,8 +228,14 @@ func (a *API) Search(params api.SearchParam) (*api.SearchResponse, error) {
     return &searchResponse, nil
 }
 
+/*
+Name: Reserve
+Type: API Func 
+Purpose: Resy implementation of the Reserve api func
+*/
 func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
     
+    // converting fields to url query format
     date := params.Year + "-" + params.Month + "-" + params.Day
     dayField := `day=` + date
     authField := `x-resy-auth-token=` + params.LoginResp.AuthToken
@@ -189,7 +247,6 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
 
     findUrl := `https://api.resy.com/4/find?` + strings.Join(fields, "&")
     
-
     request, err := http.NewRequest("GET", findUrl, bytes.NewBuffer([]byte{}))
     if err != nil {
         return nil, err
@@ -225,25 +282,36 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
         return nil, err
     }
 
-
+    // JSON structure is complicated here, see api/resy/doc.go for full explanation
     jsonResultsMap := jsonTopLevelMap["results"].(map[string]interface{}) 
     jsonVenuesList := jsonResultsMap["venues"].([]interface{}) 
     jsonVenueMap := jsonVenuesList[0].(map[string]interface{})
     jsonSlotsList := jsonVenueMap["slots"].([]interface{}) 
     for i:=0; i < len(params.ReservationTimes); i++ {
+
         currentTime := params.ReservationTimes[i]
         for j:=0; j < len(jsonSlotsList); j++ {
+            // if any errs appear, we just move to next time on list(i.e. continue)
+
             jsonSlotMap := jsonSlotsList[j].(map[string]interface{})
             jsonDateMap:= jsonSlotMap["date"].(map[string]interface{})
+
+            // start contains the date for this slot in format "YrYrYrYr-MoMo-DyDy HrHr:MnMn"
             startRaw := jsonDateMap["start"].(string)
+            // split to get ["YrYrYrYr-MoMo-DyDy", "HrHr:MnMn"]
             startFields := strings.Split(startRaw, " ")
+            // isolate time field and split to get ["HrHr","MnMn"]
             timeFields := strings.Split(startFields[1], ":")
+            // if time field matches of slot matches current selected ResTime, move to config step 
             if timeFields[0] == currentTime.Hour && timeFields[1] == currentTime.Minute {
                 jsonConfigMap := jsonSlotMap["config"].(map[string]interface{})
                 configToken := jsonConfigMap["token"].(string)
                 configIDField := `config_id=` + url.QueryEscape(configToken)
+                // Reuse same fields from def of findUrl(see api/resy/doc.go)
                 fields = []string{dayField, partySizeField, authField, venueIDField, configIDField}
+
                 detailUrl := "https://api.resy.com/3/details?" + strings.Join(fields, "&") 
+
                 requestDetail, err := http.NewRequest("GET", detailUrl, bytes.NewBuffer([]byte{}))
                 if err != nil {
                     continue 
@@ -263,7 +331,6 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
                     return nil, api.ErrNetwork
                 }
 
-
                 defer responseDetail.Body.Close()
 
                 responseDetailBody, err := io.ReadAll(responseDetail.Body)
@@ -276,12 +343,12 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
                 if err != nil {
                     return nil, err
                 }
-
-                bookUrl := "https://api.resy.com/3/book?" + strings.Join(fields, "&") 
-
-
                 jsonBookTokenMap := jsonTopLevelMap["book_token"].(map[string]interface{}) 
                 bookToken := jsonBookTokenMap["value"].(string)
+ 
+                // if config step yielded a book token, move to 'reserve' step
+                bookUrl := "https://api.resy.com/3/book?" + strings.Join(fields, "&") 
+
                 bookField := "book_token=" + url.QueryEscape(bookToken)
                 paymentMethodStr := `{"id":` + strconv.FormatInt(params.LoginResp.PaymentMethodID, 10) + `}`
                 paymentMethodField := "struct_payment_method=" + url.QueryEscape(paymentMethodStr)
@@ -312,6 +379,7 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
                     continue
                 }
 
+                // if everything worked out, return time
                 resp := api.ReserveResponse{
                     ReservationTime: currentTime,
                 }
@@ -322,7 +390,8 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
         }
          
     }
-    
+   
+    // we only reach here if every time failed, meaning no table
     return nil, api.ErrNoTable 
 }
 
