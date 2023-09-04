@@ -1,3 +1,7 @@
+/*
+Author: Bruce Jagid
+Created On: Aug 12, 2023
+*/
 package main
 
 import (
@@ -8,9 +12,8 @@ import (
 )
 
 func main() {
-
-    resy_api := &resy.API{APIKey: "VbWk7s3L4KiK5fzlO7JD3Q5EYolJI7n5"}
-    appCtx := app.AppCtx{API: resy_api}
+    resy_api := resy.GetDefaultAPI()
+    appCtx := app.AppCtx{API: &resy_api}
     cli := cli.ResolvedCLI{
         AppCtx: appCtx,
         In: os.Stdin,
