@@ -9,5 +9,4 @@ front-end and back-end behavior
 */
 type Runnable interface {
     Run() (error)
-    Stop() (error)
 }
