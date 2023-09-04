@@ -172,7 +172,6 @@ type Operation struct{
     Status  OperationStatus
 }
 
-
 /*
 Name: findLastTime
 Type: Internal Func
@@ -225,7 +224,6 @@ func dateStringsToInts(in []string) ([]int, error) {
     }
     return out, nil
 }
-
 
 /*
 Name: isTimeUTCFuture 
