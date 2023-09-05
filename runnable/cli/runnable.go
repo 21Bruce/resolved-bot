@@ -1,3 +1,7 @@
+/*
+Author: Bruce Jagid
+Created On: Aug 12, 2023
+*/
 package cli
 
 import (
@@ -15,9 +19,16 @@ import (
 )
 
 var (
+    // Error if we can't parse date properly
     ErrInvDate = errors.New("invalid date format")
 )
 
+/*
+Name: ResolvedCLI
+Type: External CLI Struct
+Purpose: Encapsulate the state
+and initial config of the system
+*/
 type ResolvedCLI struct {
     AppCtx      app.AppCtx 
     In          io.Reader
@@ -26,7 +37,15 @@ type ResolvedCLI struct {
     parseCtx    cli.ParseCtx
 }
 
-func validateSearch(in map[string][]string) (string, int, error){
+/*
+Name: parseSearch
+Type: Internal Func
+Purpose: Perform some extra
+parsing on top of the cli parser
+and return the field for use in the main
+handler
+*/
+func parseSearch(in map[string][]string) (string, int, error){
 
     name := in["n"][0]
     limit := 0
@@ -41,8 +60,17 @@ func validateSearch(in map[string][]string) (string, int, error){
 
 }
 
+/*
+Name: handleSearch
+Type: Internal Func
+Purpose: This function
+is the handler for the 'search' command.
+It is responsible for taking in the validated
+flag args and returning a string
+of the search results
+*/
 func (c *ResolvedCLI) handleSearch(in map[string][]string) (string, error) {
-    name, limit, err := validateSearch(in)
+    name, limit, err := parseSearch(in)
     if err != nil {
         return "", err
     }
@@ -55,11 +83,25 @@ func (c *ResolvedCLI) handleSearch(in map[string][]string) (string, error) {
     return retVal.ToString(), nil
 }
 
+/*
+Name: handleQuit
+Type: Internal Func
+Purpose: This function
+is the handler for the 'exit' and 'quit' commands.
+It is responsible for exiting the CLI
+*/
 func (c *ResolvedCLI) handleQuit(in map[string][]string) (string, error) {
     os.Exit(0)
     return "", nil
 }
 
+/*
+Name: flagToShortStr 
+Type: Internal Func
+Purpose: This function assists in
+the 'help' command, this all should be moved
+to the cli top level
+*/
 func flagToShortStr(flag cli.Flag) (string) {
     flagStr := " [-" + flag.Name 
     if flag.LongName != "" {
@@ -69,6 +111,15 @@ func flagToShortStr(flag cli.Flag) (string) {
     return flagStr
 }
 
+/*
+Name: handleHelp 
+Type: Internal Func
+Purpose: This function is the handler
+for the 'help' command, It is responsible
+for printing out helpful info for each
+command, it really should be moved to the
+cli top level
+*/
 func (c *ResolvedCLI) handleHelp(in map[string][]string) (string, error) {
     helpStr := "Commands: \n"
     for _, cmd := range c.parseCtx.Commands {
@@ -85,17 +136,32 @@ func (c *ResolvedCLI) handleHelp(in map[string][]string) (string, error) {
     return helpStr, nil 
 }
 
+/*
+Name: handleList 
+Type: Internal Func
+Purpose: This function is the handler
+for the 'list' command, It is responsible
+for printing out a history of operations
+from the AppCtx
+*/
 func (c *ResolvedCLI) handleList(in map[string][]string) (string, error) {
     return c.AppCtx.OperationsToString()
 }
 
+/*
+Name: parseRats 
+Type: Internal Func
+Purpose: This function helps with parsing
+for the main 'rats' handler function
+*/
 func (c *ResolvedCLI) parseRats(in map[string][]string) (*app.ReserveAtTimeParam, error) {
     req := app.ReserveAtTimeParam{}
+    // if we have login info, overwrite the default
     if in["e"] != nil {
-        req.Email = in["e"][0]
+        req.Login.Email = in["e"][0]
     }
     if in["p"] != nil {
-        req.Password = in["p"][0]
+        req.Login.Password = in["p"][0]
     }
     id, err := strconv.ParseInt(in["v"][0], 10, 64)
     if err != nil {
@@ -162,7 +228,15 @@ func (c *ResolvedCLI) parseRats(in map[string][]string) (*app.ReserveAtTimeParam
     return &req, nil
 }
 
-
+/*
+Name: handleRats 
+Type: Internal Func
+Purpose: This function is the handler
+for the 'rats' command. It's goal is to
+take the values defined in each flag field
+and schedule a reserve at time operation
+in the AppCtx
+*/
 func (c *ResolvedCLI) handleRats(in map[string][]string) (string, error) {
     req, err := c.parseRats(in)
     if err != nil {
@@ -173,17 +247,26 @@ func (c *ResolvedCLI) handleRats(in map[string][]string) (string, error) {
         return "", err
     }
     idstr := strconv.FormatInt(id, 10)
+    // if successful, tell user which id the operation is linked to
     retstr := "Successfully started rats operation with ID " + idstr 
     return retstr, nil 
 }
 
+/*
+Name: parseRais 
+Type: Internal Func
+Purpose: This function helps with parsing
+for the main 'rats' handler function.
+This function is very similiar to parseRats
+and can probably be merged a little
+*/
 func (c *ResolvedCLI) parseRais(in map[string][]string) (*app.ReserveAtIntervalParam, error) {
     req := app.ReserveAtIntervalParam{}
     if in["e"] != nil {
-        req.Email = in["e"][0]
+        req.Login.Email = in["e"][0]
     }
     if in["p"] != nil {
-        req.Password = in["p"][0]
+        req.Login.Password = in["p"][0]
     }
     id, err := strconv.ParseInt(in["v"][0], 10, 64)
     if err != nil {
@@ -224,7 +307,15 @@ func (c *ResolvedCLI) parseRais(in map[string][]string) (*app.ReserveAtIntervalP
     return &req, nil
 }
 
-
+/*
+Name: handleRais 
+Type: Internal Func
+Purpose: This function is the handler
+for the 'rais' command. Its goal is to
+take the values defined in each flag field
+and schedule a reserve at interval operation
+in the AppCtx
+*/
 func (c *ResolvedCLI) handleRais(in map[string][]string) (string, error) {
     req, err := c.parseRais(in)
     if err != nil {
@@ -235,10 +326,19 @@ func (c *ResolvedCLI) handleRais(in map[string][]string) (string, error) {
         return "", err
     }
     idstr := strconv.FormatInt(id, 10)
+    // if successful, tell user and print ID of new operation
     retstr := "Successfully started rais operation with ID " + idstr 
     return retstr, nil 
 }
 
+/*
+Name: handleLogin 
+Type: Internal Func
+Purpose: This function is the handler
+for the 'login' command, its goal is to
+save the login info on the appctx if its
+valid
+*/
 func (c *ResolvedCLI) handleLogin(in map[string][]string) (string, error) {
     req := app.LoginParam{
         Email: in["e"][0],
@@ -248,17 +348,36 @@ func (c *ResolvedCLI) handleLogin(in map[string][]string) (string, error) {
     if err != nil {
         return "", err
     }
+    // if successful, tell user
     return "Successfully Logged In", nil
 }
 
+/*
+Name: handleLogout
+Type: Internal Func
+Purpose: This function is the handler
+for the 'logout' command, its goal is to
+erase login info from the appctx
+*/
 func (c *ResolvedCLI) handleLogout(in map[string][]string) (string, error) {
     err := c.AppCtx.Logout()
     if err != nil {
         return "", err
     }
+    // if successful, tell user
     return "Successfully Logged Out", nil
 }
 
+/*
+Name: handleCancel
+Type: Internal Func
+Purpose: This function is the handler
+for the 'cancel' command, its goal is to
+cancel all operations given the id list
+in the -i field. We only cancel all or no 
+operations, so we check before if they are
+valid to be cancelled
+*/
 func (c *ResolvedCLI) handleCancel(in map[string][]string) (string, error) {
     for _, idStr := range in["i"] {
         id, err := strconv.ParseInt(idStr, 10, 64)
@@ -281,6 +400,16 @@ func (c *ResolvedCLI) handleCancel(in map[string][]string) (string, error) {
     return "Cancelled Operations Successfully", nil 
 }
 
+/*
+Name: handleClean
+Type: Internal Func
+Purpose: This function is the handler
+for the 'clean' command, its goal is to
+cancel all operations given the id list
+in the -i field. We only clean all or no 
+operations, so we check before if they are
+valid to be cleaned
+*/
 func (c *ResolvedCLI) handleClean(in map[string][]string) (string, error) {
     for _, idStr := range in["i"] {
         id, err := strconv.ParseInt(idStr, 10, 64)
@@ -303,7 +432,15 @@ func (c *ResolvedCLI) handleClean(in map[string][]string) (string, error) {
     return "Cleaned Operations Successfully", nil 
 }
 
+/*
+Name: initParseCtx 
+Type: Internal Func
+Purpose: This function initializes
+the parse ctx with the above handlers
+and command info
+*/
 func (c *ResolvedCLI) initParseCtx() {
+    // 'search' command
     searchCommand := cli.Command{
         Name: "search",
         Description: "Finds restaurant info",
@@ -332,6 +469,7 @@ func (c *ResolvedCLI) initParseCtx() {
         Handler: c.handleSearch,
     }
 
+    // 'rats' command
     ratsCommand := cli.Command{
         Name: "rats",
         Description: "Reserve At Time Scheduler",
@@ -411,6 +549,7 @@ func (c *ResolvedCLI) initParseCtx() {
         Handler: c.handleRats,
     }
 
+    // 'rais' command
     raisCommand := cli.Command{
         Name: "rais",
         Description: "Reserve At Interval Scheduler",
@@ -491,6 +630,7 @@ func (c *ResolvedCLI) initParseCtx() {
     }
 
 
+    // 'list' command
     listCommand := cli.Command{
         Name: "list",
         Description: "List all operations",
@@ -498,6 +638,7 @@ func (c *ResolvedCLI) initParseCtx() {
         Handler: c.handleList,
     }
 
+    // 'login' command
     loginCommand := cli.Command{
         Name: "login",
         Description: "Set login defaults",
@@ -526,6 +667,7 @@ func (c *ResolvedCLI) initParseCtx() {
         Handler: c.handleLogin,
     }
 
+    // 'logout' command
     logoutCommand := cli.Command{
         Name: "logout",
         Description: "Clear default login credentials",
@@ -533,6 +675,7 @@ func (c *ResolvedCLI) initParseCtx() {
         Handler: c.handleLogout,
     }
 
+    // 'cancel' command
     cancelCommand := cli.Command{
         Name: "cancel",
         Description: "Cancel operations given ids",
@@ -551,6 +694,7 @@ func (c *ResolvedCLI) initParseCtx() {
         Handler: c.handleCancel,
     }
 
+    // 'clean' command
     cleanCommand := cli.Command{
         Name: "clean",
         Description: "Clean operations given ids",
@@ -569,8 +713,7 @@ func (c *ResolvedCLI) initParseCtx() {
         Handler: c.handleClean,
     }
 
-
-
+    // 'quit' command
     quitCommand := cli.Command{
         Name: "quit",
         Description: "Exits the CLI",
@@ -578,6 +721,7 @@ func (c *ResolvedCLI) initParseCtx() {
         Handler: c.handleQuit,
     }
 
+    // 'exit' command, same handler as 'quit' command
     exitCommand := cli.Command{
         Name: "exit",
         Description: "Exits the CLI",
@@ -585,6 +729,7 @@ func (c *ResolvedCLI) initParseCtx() {
         Handler: c.handleQuit,
     }
 
+    // 'help' command
     helpCommand := cli.Command{
         Name: "help",
         Description: "Displays helpful info about commands",
@@ -592,6 +737,7 @@ func (c *ResolvedCLI) initParseCtx() {
         Handler: c.handleHelp,
     }
 
+    // we init the parseCtx with the above info
     c.parseCtx = cli.ParseCtx{
         OpenDelim: "[",
         CloseDelim: "]",
@@ -611,16 +757,27 @@ func (c *ResolvedCLI) initParseCtx() {
     }
 }
 
-func (c *ResolvedCLI) Run() {
+/*
+Name: Run 
+Type: External Func
+Purpose: This function inits the 
+parse ctx and enters into an infinite
+loop, starting the REPL
+*/
+func (c *ResolvedCLI) Run() (error) {
+    // init the parse ctx w/the above handler
     c.initParseCtx()
     scanner := bufio.NewScanner(c.In)
+    // print welcome msg 
     fmt.Fprintln(c.Out, "Welcome to the Resolved CLI! For Help type 'help'") 
     for {
+        // print prompt 
         fmt.Fprint(c.Out, "resolved(0.1.0)>> ") 
         scanner.Scan()
         if err := scanner.Err(); err != nil {
             fmt.Fprintln(c.Err, err);
         }
+        // parse input 
         result, err := c.parseCtx.Parse(scanner.Text()) 
         if err != nil {
             fmt.Fprint(c.Err, "ERROR: ")
@@ -629,6 +786,7 @@ func (c *ResolvedCLI) Run() {
             fmt.Fprintln(c.Out, result) 
         }
     }
+    return nil
 }
 
 
