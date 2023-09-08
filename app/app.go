@@ -34,9 +34,9 @@ type SearchParam api.SearchParam
 type SearchResponse api.SearchResponse
 
 type AppCtx struct {
-    API         api.API
+    APIs        []api.API
     operations  []Operation    
-    loginInfo   LoginParam
+    loginStore  []LoginParam
     idGen       int64
 }
 
@@ -222,15 +222,15 @@ func (a *AppCtx) CancelOperation(id int64) (error) {
     return ErrIdOp
 }
 
-func (a *AppCtx) ScheduleReserveAtIntervalOperation(params ReserveAtIntervalParam) (int64, error) {
+func (a *AppCtx) ScheduleReserveAtIntervalOperation(apid int, params ReserveAtIntervalParam) (int64, error) {
     id := a.idGen
     a.idGen += 1 
     if (params.Login.Email == "" || params.Login.Password == "") {
-        if(a.loginInfo.Email == "" && a.loginInfo.Password == "") {
+        if(a.loginStore[apid].Email == "" && a.loginStore[apid].Password == "") {
             return 0, ErrNoLogin
         }
-        params.Login.Email = a.loginInfo.Email
-        params.Login.Password = a.loginInfo.Password
+        params.Login.Email = a.loginStore[apid].Email
+        params.Login.Password = a.loginStore[apid].Password
     }
     cancel := make(chan bool)
     output := make(chan OperationResult)
@@ -240,11 +240,11 @@ func (a *AppCtx) ScheduleReserveAtIntervalOperation(params ReserveAtIntervalPara
         Output: output,
         Status: InProgressStatusType,
     })
-    go a.reserveAtInterval(params, cancel, output)
+    go a.reserveAtInterval(apid, params, cancel, output)
     return id, nil
 }
 
-func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan bool, output chan<- OperationResult){
+func (a *AppCtx) reserveAtInterval(apid int, params ReserveAtIntervalParam, cancel <-chan bool, output chan<- OperationResult){
     lastTime, err := findLastTime(params.ReservationTimes)
     if err != nil {
         output<-OperationResult{Response: nil, Err: err}     
@@ -274,14 +274,14 @@ func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan 
     minute := dateInts[6] 
     repeatInterval := time.Hour * time.Duration(numHrs) + time.Minute * time.Duration(numMns)
     for {
-        loginResp, err := a.API.Login(api.LoginParam(params.Login))
+        loginResp, err := a.APIs[apid].Login(api.LoginParam(params.Login))
         
         if err != nil {
             output<-OperationResult{Response: nil, Err: err}     
             close(output)
             return
         }
-        reserveResp, err := a.API.Reserve(
+        reserveResp, err := a.APIs[apid].Reserve(
             api.ReserveParam{
                 LoginResp: *loginResp,
                 Day: params.Day,
@@ -321,15 +321,15 @@ func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan 
     }
 }
 
-func (a *AppCtx) ScheduleReserveAtTimeOperation(params ReserveAtTimeParam) (int64, error) {
+func (a *AppCtx) ScheduleReserveAtTimeOperation(apid int, params ReserveAtTimeParam) (int64, error) {
     id := a.idGen
     a.idGen += 1 
     if (params.Login.Email == "" || params.Login.Password == "") {
-        if(a.loginInfo.Email == "" && a.loginInfo.Password == "") {
+        if(a.loginStore[apid].Email == "" && a.loginStore[apid].Password == "") {
             return 0, ErrNoLogin
         }
-        params.Login.Email = a.loginInfo.Email
-        params.Login.Password = a.loginInfo.Password
+        params.Login.Email = a.loginStore[apid].Email
+        params.Login.Password = a.loginStore[apid].Password
     }
     cancel := make(chan bool)
     output := make(chan OperationResult)
@@ -339,11 +339,11 @@ func (a *AppCtx) ScheduleReserveAtTimeOperation(params ReserveAtTimeParam) (int6
         Output: output,
         Status: InProgressStatusType,
     })
-    go a.reserveAtTime(params, cancel, output)
+    go a.reserveAtTime(apid, params, cancel, output)
     return id, nil
 }
 
-func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, output chan<- OperationResult) {
+func (a *AppCtx) reserveAtTime(apid int, params ReserveAtTimeParam, cancel <-chan bool, output chan<- OperationResult) {
     dateInts, err := dateStringsToInts([]string{ 
         params.RequestTime.Hour,
         params.RequestTime.Minute,
@@ -374,14 +374,14 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, ou
         close(output)
         return
     }
-    loginResp, err := a.API.Login(api.LoginParam(params.Login))
+    loginResp, err := a.APIs[apid].Login(api.LoginParam(params.Login))
     
     if err != nil {
         output<- OperationResult{Response: nil, Err:err}
         close(output)
         return
     }
-    reserveResp, err := a.API.Reserve(
+    reserveResp, err := a.APIs[apid].Reserve(
         api.ReserveParam{
             LoginResp: *loginResp,
             Day: params.Day,
@@ -403,13 +403,13 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, ou
     return
 }
 
-func (a *AppCtx) Login(params LoginParam) (error) {
+func (a *AppCtx) Login(apid int, params LoginParam) (error) {
     reqParams := api.LoginParam(params)
-    _, err :=  a.API.Login(reqParams)
+    _, err :=  a.APIs[apid].Login(reqParams)
     if err != nil {
         return err
     }
-    a.loginInfo = params
+    a.loginStore[apid] = params
     return nil
 }
 
@@ -440,12 +440,12 @@ func (a *AppCtx) CleanOperation(id int64) (error) {
     return ErrIdOp
 }
 
-func (a *AppCtx) Logout() (error) {
-    if (a.loginInfo.Email == "") && (a.loginInfo.Password == "") {
+func (a *AppCtx) Logout(apid int) (error) {
+    if (a.loginStore[apid].Email == "") && (a.loginStore.Password == "") {
         return ErrNoLogout
     }
     params := LoginParam{}
-    a.loginInfo = params
+    a.loginStore[apid] = params
     return nil
 }
 
