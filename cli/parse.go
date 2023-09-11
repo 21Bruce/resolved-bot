@@ -31,6 +31,7 @@ type Flag struct {
     LongName        string
     Description     string
     ValidationCtx   FlagValidationCtx
+    Arbitrator      func ([]string) ([]Flag, error)
 }
 
 type Command struct {
@@ -109,17 +110,27 @@ func (pc *ParseCtx) Tokenize (in string) ([]string, error) {
 
 func (pc *ParseCtx) parseFlags(cmd Command, tokens []string) (string, error) {
     out := make(map[string][]string)
-    currFlg := ""
+    currFlg := Flag{} 
+    flags := make([]Flag, len(cmd.Flags), len(cmd.Flags))
+    copy(flags, cmd.Flags)
     for _, token := range tokens {
         if len(token) > 2 && string(token[0:2]) == "--" {
+            if currFlg.Name != "" && currFlg.Arbitrator != nil{
+                arbitrator := currFlg.Arbitrator
+                nflags, err := arbitrator(out[currFlg.Name])
+                if err != nil {
+                    return "", err
+                }
+                flags = append(flags, nflags...)
+            }
             didFnd := false
-            for _, flag := range cmd.Flags {
+            for _, flag := range flags {
                 if flag.LongName != "" &&  flag.LongName == string(token[2:]) {
                     if out[flag.Name] != nil {
                         return "", ErrRpFlg
                     }
-                    currFlg = flag.Name
-                    out[currFlg] = make([]string, 0)
+                    currFlg = flag
+                    out[currFlg.Name] = make([]string, 0)
                     didFnd = true
                     break
                 }
@@ -128,14 +139,22 @@ func (pc *ParseCtx) parseFlags(cmd Command, tokens []string) (string, error) {
                 continue 
             }
         } else if len(token) > 1 && string(token[0]) == "-"{
+            if currFlg.Name != "" && currFlg.Arbitrator != nil{
+                arbitrator := currFlg.Arbitrator
+                nflags, err := arbitrator(out[currFlg.Name])
+                if err != nil {
+                    return "", err
+                }
+                flags = append(flags, nflags...)
+            }
             didFnd := false
-            for _, flag := range cmd.Flags {
+            for _, flag := range flags {
                 if flag.Name == string(token[1:]) {
                     if out[flag.Name] != nil {
                         return "", ErrRpFlg
                     }
-                    currFlg = flag.Name
-                    out[currFlg] = make([]string, 0)
+                    currFlg = flag
+                    out[currFlg.Name] = make([]string, 0)
                     didFnd = true
                     break
                 }
@@ -144,10 +163,10 @@ func (pc *ParseCtx) parseFlags(cmd Command, tokens []string) (string, error) {
                 continue 
             }
         }
-        if currFlg == "" {
+        if currFlg.Name == "" {
             return "", ErrNoFlg
         }
-        out[currFlg] = append(out[currFlg], token)
+        out[currFlg.Name] = append(out[currFlg.Name], token)
     }
 
     err := pc.validation(cmd, out)
