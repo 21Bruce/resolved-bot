@@ -18,20 +18,20 @@ So far, items 1-3 are implemented, with future plans in the issues section label
 ## How to use:
 
 On a successful start up, one should be prompted with the CLI welcome message:
-![prompt](prompt.png)
+![prompt](./assets/prompt.png)
 
 Typing `help` yields:
-![help](help.png)
+![help](./assets/help.png)
 
 I'll explain each command, but not in the order they appear:
 1. `search` takes in one required input, the name of restuarant you want to search for, and one optional input, a number to limit the results by. The name of the restaurant is specified with the `-n` flag(or alternatively the `--name` flag) and the limit is specified with the `-l`(alternatively `--limit`) flag.
 
 Here is an example use of a search using a name of carbone and limit of 5: 
-![search](search.png)
+![search](./assets/search.png)
 
 What if the restaurant name has spaces? Just wrap it in square brackets. In this next example, we'll search for "double chicken please":
 
-![search_bracket](search_bracket.png)
+![search_bracket](./assets/search_bracket.png)
 
 The purpose of searching is to obtain the `VenueID`. This number is a unique identifier that resy uses to find the restaurant that you want to reserve at, since multiple restaurants can have the same name.
 
@@ -42,7 +42,7 @@ to be one of the lucky few who press "reserve" fast enough on the 1st. `rats` wi
 
 Here is an example use:
 
-![rats](rats.png)
+![rats](./assets/rats.png)
 
 I'll walk through what each flag does:
 1. `-v` or `--venue-id` specifies the unique identifier for which we want to make a reservation. We're using double chicken please's id from the search example.
