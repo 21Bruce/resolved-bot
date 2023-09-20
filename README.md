@@ -18,20 +18,20 @@ So far, items 1-3 are implemented, with future plans in the issues section label
 ## How to use:
 
 On a successful start up, one should be prompted with the CLI welcome message:
-![Screenshot 2023-08-25 at 10 41 05 PM](https://github.com/21Bruce/resolved-server/assets/57542085/54e339e0-82e3-431f-9869-928bee6e1408)
+![prompt](prompt.png)
 
 Typing `help` yields:
-![Screenshot 2023-08-25 at 10 42 13 PM](https://github.com/21Bruce/resolved-server/assets/57542085/109ce62b-399b-4cdb-90e5-70fd4cc2f137)
+![help](help.png)
 
 I'll explain each command, but not in the order they appear:
 1. `search` takes in one required input, the name of restuarant you want to search for, and one optional input, a number to limit the results by. The name of the restaurant is specified with the `-n` flag(or alternatively the `--name` flag) and the limit is specified with the `-l`(alternatively `--limit`) flag.
 
 Here is an example use of a search using a name of carbone and limit of 5: 
-![Screenshot 2023-08-25 at 10 47 23 PM](https://github.com/21Bruce/resolved-server/assets/57542085/835fecb6-b53b-457a-a861-c0eafe90d09a)
+![search](search.png)
 
 What if the restaurant name has spaces? Just wrap it in square brackets. In this next example, we'll search for "double chicken please":
 
-![Screenshot 2023-08-25 at 10 50 29 PM](https://github.com/21Bruce/resolved-server/assets/57542085/636f5ab9-c7c5-4a22-b8c3-737515e4f417)
+![search_bracket](search_bracket.png)
 
 The purpose of searching is to obtain the `VenueID`. This number is a unique identifier that resy uses to find the restaurant that you want to reserve at, since multiple restaurants can have the same name.
 
@@ -42,7 +42,7 @@ to be one of the lucky few who press "reserve" fast enough on the 1st. `rats` wi
 
 Here is an example use:
 
-![Screenshot 2023-08-25 at 11 05 39 PM](https://github.com/21Bruce/resolved-server/assets/57542085/2e042d36-50f7-4042-8012-f7bb8539828e)
+![rats](rats.png)
 
 I'll walk through what each flag does:
 1. `-v` or `--venue-id` specifies the unique identifier for which we want to make a reservation. We're using double chicken please's id from the search example.
