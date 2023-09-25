@@ -1,4 +1,4 @@
-# resolved-server
+# resolved-bot
 ## Description
 Resolved is a combination of the following:
 1. A go API to resy
