@@ -15,6 +15,7 @@ var (
     ErrNetwork = errors.New("unknown network error")
     ErrPastDate = errors.New("latest reservation time has passed")
     ErrTimeNull = errors.New("times list empty")
+    ErrNoOffer = errors.New("table is not offered on given date")
 )
 
 /*

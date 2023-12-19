@@ -36,7 +36,7 @@ General Overview of Resy API:
 
     The Search functionality of Resy requires only one request message,
     and generally takes a query name  as input. On success, we are
-    given a JSON of restaurant data entries matching the query  in
+    given a JSON of restaurant data entries matching the query in
     some way. The specific message structure of a Search operation is
     discussed in the 'Search' section of this document.
 
