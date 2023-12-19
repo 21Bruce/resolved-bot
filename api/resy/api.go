@@ -124,6 +124,7 @@ func (a *API) Login(params api.LoginParam) (*api.LoginResponse, error) {
     defer response.Body.Close()
 
     responseBody, err := io.ReadAll(response.Body)
+
     if err != nil {
         return nil, err
     }
@@ -133,6 +134,7 @@ func (a *API) Login(params api.LoginParam) (*api.LoginResponse, error) {
     if err != nil {
         return nil, err
     }
+
 
     loginResponse := api.LoginResponse{
         ID:              int64(jsonMap["id"].(float64)),
@@ -284,7 +286,10 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
 
     // JSON structure is complicated here, see api/resy/doc.go for full explanation
     jsonResultsMap := jsonTopLevelMap["results"].(map[string]interface{}) 
-    jsonVenuesList := jsonResultsMap["venues"].([]interface{}) 
+    jsonVenuesList := jsonResultsMap["venues"].([]interface{})
+    if len(jsonVenuesList) == 0 {
+        return nil, api.ErrNoOffer
+    }
     jsonVenueMap := jsonVenuesList[0].(map[string]interface{})
     jsonSlotsList := jsonVenueMap["slots"].([]interface{}) 
     for i:=0; i < len(params.ReservationTimes); i++ {
