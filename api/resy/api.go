@@ -136,7 +136,7 @@ func (a *API) Login(params api.LoginParam) (*api.LoginResponse, error) {
         return nil, err
     }
 
-    if jsonMap["payment_method_id"] == null {
+    if jsonMap["payment_method_id"] == nil {
         return nil, api.ErrNoPayInfo
     }
 
