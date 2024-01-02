@@ -106,6 +106,20 @@ type Time struct {
 }
 
 /*
+Name: LongTime
+Type: API Input Struct
+Purpose: Provide a go indepent struct for representing time
+at a long scale(i.e. years + months + days)
+*/
+type LongTime struct {
+    Year            string
+    Month           string
+    Day             string
+    Hour            string
+    Minute          string
+}
+
+/*
 Name: ReserveParam
 Type: API Func Input Struct
 Purpose: Input information to the 'Reserve' api function 
@@ -140,6 +154,7 @@ type API interface {
     Login(params LoginParam) (*LoginResponse, error)
     Search(params SearchParam) (*SearchResponse, error)
     Reserve(params ReserveParam) (*ReserveResponse, error)
+    AuthMinExpire() (*LongTime)
 }
 
 /*

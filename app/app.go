@@ -173,6 +173,24 @@ type Operation struct{
 }
 
 /*
+Name: subIntLongTime
+Type: Internal Func
+Purpose: Subtract one time in integer
+array form from another
+in a logical manner. For example
+
+YYYY:MM:DD:HH:SS - YYYY:MM:DD:HH:SS = YYYY:MM:DD:HH:SS
+
+2023:01:20:00:00 - 0001:08:01:00:00 = 2021:05:19:00:00 
+
+if diff > base, we floor the result to 0
+*/
+func subIntLongTime(base [6]int, diff [6]int) ([6]int) {
+
+}
+
+
+/*
 Name: findLastTime
 Type: Internal Func
 Purpose: Out of a list of times, return the latest time
@@ -526,11 +544,28 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, ou
         params.RequestMonth,
         params.RequestDay,
     })
+
     if err != nil {
         output <- OperationResult{Response: nil, Err:err}
         close(output)
         return
     }
+ 
+    minAuthTime := a.API.AuthMinExpire()
+    authInts, err := dateStringsToInts([]string{
+        minAuthTime.Hour,
+        minAuthTime.Minute,
+        minAuthTime.Year,
+        minAuthTime.Month,
+        minAuthTime.Day,
+    })
+
+    if err != nil {
+        output <- OperationResult{Response: nil, Err:err}
+        close(output)
+        return
+    }
+ 
     // set date strings to locals
     hour := dateInts[0]
     minute := dateInts[1] 
@@ -538,12 +573,19 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, ou
     month := dateInts[3] 
     day := dateInts[4]
 
+    ahour := authInts[0]
+    aminute := authInts[1]
+    ayear := authInts[2]
+    amonth := authInts[3]
+    aday := authInts[4]
+
     // if this date is not in the future, err 
     if !isTimeUTCFuture(year, month, day, hour, minute) {
         output <- OperationResult{Response: nil, Err: ErrTimeFut}     
         close(output)
         return
     }
+
     requestTime :=  time.Date(year, time.Month(month), day, hour, minute, 0, 0, time.UTC)
 
     // sleep with ability to cancel 

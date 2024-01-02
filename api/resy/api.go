@@ -405,6 +405,23 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
     return nil, api.ErrNoTable 
 }
 
+/*
+Name: AuthMinExpire 
+Type: API Func 
+Purpose: Resy implementation of the AuthMinExpire api func.
+The largest minimum validity time is 6 days.
+*/
+func (a *API) AuthMinExpire() (*api.LongTime) {
+    /* 6 days */
+    return &api.LongTime {
+        Year: "00",
+        Month: "00",
+        Day: "06",
+        Hour: "00",
+        Minute: "00",
+    }
+}
+
 //func (a *API) Cancel(params api.CancelParam) (*api.CancelResponse, error) {
 //    cancelUrl := `https://api.resy.com/3/cancel` 
 //    resyToken := url.QueryEscape(params.ResyToken)
