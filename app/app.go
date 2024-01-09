@@ -71,12 +71,9 @@ reserve at interval operation by a consumer
 type ReserveAtIntervalParam struct {
     Login            LoginParam
     VenueID          int64
-    Day              string 
-    Month            string 
-    Year             string 
-    ReservationTimes []api.Time
+    ReservationTimes []time.Time
     PartySize        int
-    RepeatInterval   api.Time
+    RepeatInterval   time.Duration
 }
 
 /*
@@ -88,15 +85,9 @@ reserve at time operation by a consumer
 type ReserveAtTimeParam struct {
     Login            LoginParam
     VenueID          int64
-    Day              string 
-    Month            string 
-    Year             string 
-    ReservationTimes []api.Time
+    ReservationTimes []time.Time
     PartySize        int
-    RequestDay       string 
-    RequestMonth     string 
-    RequestYear      string 
-    RequestTime      api.Time
+    RequestTime      time.Time
 }
 
 /*
@@ -105,8 +96,8 @@ Type: interface
 Purpose: Provide a common definition
 for an operation result
 */
-type Timeable interface {
-    Time() (api.Time)
+type Timetable interface {
+    Time() (time.Time)
 }
 
 /*
@@ -116,15 +107,15 @@ Purpose: Define the data that should be returned on a
 successful reserve at interval response
 */
 type ReserveAtIntervalResponse struct {
-    ReservationTime api.Time
+    ReservationTime time.Time
 }
 
 /*
 Name: Time 
 Type: interface method
-Purpose: Satisfy the Timeable interface
+Purpose: Satisfy the Timetable interface
 */
-func (r ReserveAtIntervalResponse) Time() (api.Time) {
+func (r ReserveAtIntervalResponse) Time() (time.Time) {
     return r.ReservationTime
 }
 
@@ -135,15 +126,15 @@ Purpose: Define the data that should be returned on a
 successful reserve at time response
 */
 type ReserveAtTimeResponse struct {
-    ReservationTime api.Time
+    ReservationTime time.Time
 }
 
 /*
 Name: Time 
 Type: interface method
-Purpose: Satisfy the Timeable interface
+Purpose: Satisfy the Timetable interface
 */
-func (r ReserveAtTimeResponse) Time() (api.Time) {
+func (r ReserveAtTimeResponse) Time() (time.Time) {
     return r.ReservationTime
 }
 
@@ -154,7 +145,7 @@ Purpose: Define a consistent way of conveying a successful
 operation
 */
 type OperationResult struct {
-    Response    Timeable    
+    Response    Timetable
     Err         error
 }
 
@@ -172,129 +163,23 @@ type Operation struct{
     Status  OperationStatus
 }
 
-/*
-Name: subIntLongTime
-Type: Internal Func
-Purpose: Subtract one time in integer
-array form from another
-in a logical manner. For example
-
-YYYY:MM:DD:HH:SS - YYYY:MM:DD:HH:SS = YYYY:MM:DD:HH:SS
-
-2023:01:20:00:00 - 0001:08:01:00:00 = 2021:05:19:00:00 
-
-if diff > base, we floor the result to 0
-*/
-func subIntLongTime(base [6]int, diff [6]int) ([6]int) {
-
-}
-
 
 /*
 Name: findLastTime
 Type: Internal Func
 Purpose: Out of a list of times, return the latest time
 */
-func findLastTime(times []api.Time) (*api.Time, error) {
+func findLastTime(times []time.Time) (*time.Time, error) {
     if len(times) == 0 {
         return nil, api.ErrTimeNull
     }
     lastTime := times[0]
     for i := 1; i < len(times); i++{
-        lstHr, err := strconv.ParseInt(lastTime.Hour, 10, 64)
-        if err != nil {
-            return nil, err
+        if times[i].After(lastTime) {
+            lastTime = times[i]
         }
-        lstMn, err := strconv.ParseInt(lastTime.Minute, 10, 64)
-        if err != nil {
-            return nil, err
-        }
-        thsHr, err := strconv.ParseInt(times[i].Hour, 10, 64)
-        if err != nil {
-            return nil, err
-        }
-        thsMn, err := strconv.ParseInt(times[i].Minute, 10, 64)
-        if err != nil {
-            return nil, err
-        }
-        if (lstHr < thsHr) || (lstHr == thsHr && lstMn < thsMn) {
-           lastTime = times[i] 
-        } 
     }
     return &lastTime, nil
-}
-
-/*
-Name: dateStringsToInts
-Type: Internal Func
-Purpose: Convert the input string list to ints, 
-presumed to be in date string format for this
-function
-*/
-func dateStringsToInts(in []string) ([]int, error) {
-    out := make([]int, len(in), len(in))
-    for i, s := range in {
-        raw, err := strconv.ParseInt(s, 10, 64)
-        if err != nil {
-            return nil, err 
-        }
-        out[i] = int(raw)
-    }
-    return out, nil
-}
-
-/*
-Name: isTimeUTCFuture 
-Type: Internal Func
-Purpose: Test if the input integer times,
-interpreted as UTC respective time
-are in the future 
-*/
-func isTimeUTCFuture(year, month, day, hour, minute int) bool{
-    now := time.Now().UTC()
-    nowYear, nowMonth, nowDay := now.Date()
-    yrCmp := nowYear < year
-    yrEq := nowYear == year
-    mtCmp := int(nowMonth) < month
-    mtEq := int(nowMonth) == month
-    dyCmp := nowDay < day
-    dyEq := nowDay  == day
-    hrCmp := now.Hour() < hour
-    hrEq := now.Hour() == hour
-    mnCmp := now.Minute() < minute
-    cmp := yrCmp || 
-    (yrEq && mtCmp) || 
-    (yrEq && mtEq && dyCmp) || 
-    (yrEq && mtEq && dyEq && hrCmp) ||
-    (yrEq && mtEq && dyEq && hrEq && mnCmp) 
-    return cmp     
-}
-
-/*
-Name: isTimeLocalFuture 
-Type: Internal Func
-Purpose: Test if the input integer times,
-interpreted as Local respective time
-are in the future 
-*/
-func isTimeLocalFuture(year, month, day, hour, minute int) bool{
-    now := time.Now()
-    nowYear, nowMonth, nowDay := now.Date()
-    yrCmp := nowYear < year
-    yrEq := nowYear == year
-    mtCmp := int(nowMonth) < month
-    mtEq := int(nowMonth) == month
-    dyCmp := nowDay < day
-    dyEq := nowDay  == day
-    hrCmp := now.Hour() < hour
-    hrEq := now.Hour() == hour
-    mnCmp := now.Minute() < minute
-    cmp := yrCmp || 
-    (yrEq && mtCmp) || 
-    (yrEq && mtEq && dyCmp) || 
-    (yrEq && mtEq && dyEq && hrCmp) ||
-    (yrEq && mtEq && dyEq && hrEq && mnCmp) 
-    return cmp     
 }
 
 /*
@@ -408,39 +293,12 @@ a reservation at a given interval of time
 func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan bool, output chan<- OperationResult){
     // find and store last time from time priority list
     lastTime, err := findLastTime(params.ReservationTimes)
-    if err != nil {
-        output<-OperationResult{Response: nil, Err: err}     
-        close(output)
-        return
-    }
-
-    // convert time strings to integers 
-    dateInts, err := dateStringsToInts([]string{ 
-        params.RepeatInterval.Hour,
-        params.RepeatInterval.Minute,
-        params.Year,
-        params.Month,
-        params.Day,
-        lastTime.Hour,
-        lastTime.Minute,
-    })
 
     if err != nil {
         output<-OperationResult{Response: nil, Err: err}     
         close(output)
         return
     }
-
-    numHrs := dateInts[0]
-    numMns := dateInts[1] 
-    year := dateInts[2]
-    month := dateInts[3] 
-    day := dateInts[4]
-    hour := dateInts[5] 
-    minute := dateInts[6] 
-
-    // convert interval to a 'time.Duration', which can be used in go time.After()
-    repeatInterval := time.Hour * time.Duration(numHrs) + time.Minute * time.Duration(numMns)
 
     for {
         
@@ -457,9 +315,6 @@ func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan 
         reserveResp, err := a.API.Reserve(
             api.ReserveParam{
                 LoginResp: *loginResp,
-                Day: params.Day,
-                Month: params.Month,
-                Year: params.Year,
                 ReservationTimes: params.ReservationTimes,
                 PartySize: params.PartySize,
                 VenueID: params.VenueID,
@@ -475,10 +330,9 @@ func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan 
         if err == api.ErrNoTable {
             // see if last time on list is still in the future,
             // since if it isn't there's no point in trying to reserve it
-            cmp := isTimeLocalFuture(year, month, day, hour, minute)
-            if cmp {
+            if lastTime.After(time.Now()) {
                 select {
-                case <-time.After(repeatInterval):
+                case <-time.After(params.RepeatInterval):
                     continue
                 case <-cancel:
                     output<-OperationResult{Response: nil, Err: ErrCancel}     
@@ -536,83 +390,55 @@ Purpose: This function is intended to run on a separate thread, and tries making
 a reservation at a given time
 */
 func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, output chan<- OperationResult) {
-    // convert date strings to ints
-    dateInts, err := dateStringsToInts([]string{ 
-        params.RequestTime.Hour,
-        params.RequestTime.Minute,
-        params.RequestYear,
-        params.RequestMonth,
-        params.RequestDay,
-    })
-
-    if err != nil {
-        output <- OperationResult{Response: nil, Err:err}
-        close(output)
-        return
-    }
  
     minAuthTime := a.API.AuthMinExpire()
-    authInts, err := dateStringsToInts([]string{
-        minAuthTime.Hour,
-        minAuthTime.Minute,
-        minAuthTime.Year,
-        minAuthTime.Month,
-        minAuthTime.Day,
-    })
-
-    if err != nil {
-        output <- OperationResult{Response: nil, Err:err}
-        close(output)
-        return
-    }
- 
-    // set date strings to locals
-    hour := dateInts[0]
-    minute := dateInts[1] 
-    year := dateInts[2]
-    month := dateInts[3] 
-    day := dateInts[4]
-
-    ahour := authInts[0]
-    aminute := authInts[1]
-    ayear := authInts[2]
-    amonth := authInts[3]
-    aday := authInts[4]
 
     // if this date is not in the future, err 
-    if !isTimeUTCFuture(year, month, day, hour, minute) {
+    if params.RequestTime.Before(time.Now().UTC()) {
         output <- OperationResult{Response: nil, Err: ErrTimeFut}     
         close(output)
         return
     }
 
-    requestTime :=  time.Date(year, time.Month(month), day, hour, minute, 0, 0, time.UTC)
+    authDate := params.RequestTime.Add(-1 * minAuthTime)
+    loginResp, err := a.API.Login(api.LoginParam(params.Login))
+    if (authDate.Before(time.Now().UTC())) {
+        if err != nil {
+            output<- OperationResult{Response: nil, Err:err}
+            close(output)
+            return
+        }
+    } else {
+        select {
+        case <-time.After(time.Until(authDate)):
+            // attempt pre reserve auth
+            loginResp, err = a.API.Login(api.LoginParam(params.Login))
+             if err != nil {
+                output<- OperationResult{Response: nil, Err:err}
+                close(output)
+                return
+             }
+        case <-cancel:
+            output<- OperationResult{Response: nil, Err:ErrCancel}
+            close(output)
+            return
+        }
+    }
 
     // sleep with ability to cancel 
     select {
-    case <-time.After(time.Until(requestTime)):
+    case <-time.After(time.Until(params.RequestTime)):
     case <-cancel:
         output<- OperationResult{Response: nil, Err:ErrCancel}
         close(output)
         return
     }
 
-    // attempt pre reserve auth 
-    loginResp, err := a.API.Login(api.LoginParam(params.Login))
-    
-    if err != nil {
-        output<- OperationResult{Response: nil, Err:err}
-        close(output)
-        return
-    }
 
     // reserve 
     reserveResp, err := a.API.Reserve(
         api.ReserveParam{
             LoginResp: *loginResp,
-            Day: params.Day,
-            Month: params.Month,
-            Year: params.Year,
             ReservationTimes: params.ReservationTimes,
             PartySize: params.PartySize,
             VenueID: params.VenueID,
@@ -732,7 +558,7 @@ func (a *AppCtx) OperationsToString() (string, error) {
             case SuccessStatusType:
                 time := operation.Result.Response.Time()
                 opLstStr += "Succeeded\n"
-                opLstStr += "\tResult: " + time.Hour + ":" + time.Minute 
+                opLstStr += "\tResult: " + strconv.Itoa(time.Hour()) + ":" + strconv.Itoa(time.Minute())
             case FailStatusType:
                 err := operation.Result.Err.Error()
                 opLstStr += "Failed\n"

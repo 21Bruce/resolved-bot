@@ -13,6 +13,7 @@ import (
     "bytes"
     "strconv"
     "strings"
+    "time"
 )
 
 /*
@@ -243,7 +244,10 @@ Purpose: Resy implementation of the Reserve api func
 func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
     
     // converting fields to url query format
-    date := params.Year + "-" + params.Month + "-" + params.Day
+    year := strconv.Itoa(params.ReservationTimes[0].Year())
+    month := params.ReservationTimes[0].Month().String()
+    day := strconv.Itoa(params.ReservationTimes[0].Day())
+    date := year + "-" + month + "-" + day
     dayField := `day=` + date
     authField := `x-resy-auth-token=` + params.LoginResp.AuthToken
     latField := `lat=0`
@@ -312,8 +316,19 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
             startFields := strings.Split(startRaw, " ")
             // isolate time field and split to get ["HrHr","MnMn"]
             timeFields := strings.Split(startFields[1], ":")
-            // if time field matches of slot matches current selected ResTime, move to config step 
-            if timeFields[0] == currentTime.Hour && timeFields[1] == currentTime.Minute {
+            // if time field matches of slot matches current selected ResTime, move to config step
+
+            hourFieldInt, err := strconv.Atoi(timeFields[0])
+            if err != nil {
+                return nil, err
+            }
+
+            minFieldInt, err := strconv.Atoi(timeFields[1])
+            if err != nil {
+                return nil, err
+            }
+
+            if hourFieldInt == currentTime.Hour() && minFieldInt == currentTime.Minute() {
                 jsonConfigMap := jsonSlotMap["config"].(map[string]interface{})
                 configToken := jsonConfigMap["token"].(string)
                 configIDField := `config_id=` + url.QueryEscape(configToken)
@@ -411,15 +426,10 @@ Type: API Func
 Purpose: Resy implementation of the AuthMinExpire api func.
 The largest minimum validity time is 6 days.
 */
-func (a *API) AuthMinExpire() (*api.LongTime) {
+func (a *API) AuthMinExpire() (time.Duration) {
     /* 6 days */
-    return &api.LongTime {
-        Year: "00",
-        Month: "00",
-        Day: "06",
-        Hour: "00",
-        Minute: "00",
-    }
+    var d time.Duration = time.Hour * 24 * 6
+    return d
 }
 
 //func (a *API) Cancel(params api.CancelParam) (*api.CancelResponse, error) {
