@@ -401,29 +401,24 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, ou
     }
 
     authDate := params.RequestTime.Add(-1 * minAuthTime)
-    loginResp, err := a.API.Login(api.LoginParam(params.Login))
-    if (authDate.Before(time.Now().UTC())) {
-        if err != nil {
-            output<- OperationResult{Response: nil, Err:err}
-            close(output)
-            return
-        }
-    } else {
+    if (!authDate.Before(time.Now().UTC())) {
         select {
         case <-time.After(time.Until(authDate)):
-            // attempt pre reserve auth
-            loginResp, err = a.API.Login(api.LoginParam(params.Login))
-             if err != nil {
-                output<- OperationResult{Response: nil, Err:err}
-                close(output)
-                return
-             }
+            break
         case <-cancel:
             output<- OperationResult{Response: nil, Err:ErrCancel}
             close(output)
             return
         }
     }
+
+    loginResp, err := a.API.Login(api.LoginParam(params.Login))
+    if err != nil {
+       output<- OperationResult{Response: nil, Err:err}
+       close(output)
+       return
+    }
+ 
 
     // sleep with ability to cancel 
     select {
