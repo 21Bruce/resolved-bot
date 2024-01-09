@@ -245,7 +245,7 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
     
     // converting fields to url query format
     year := strconv.Itoa(params.ReservationTimes[0].Year())
-    month := params.ReservationTimes[0].Month().String()
+    month := strconv.Itoa(int(params.ReservationTimes[0].Month()))
     day := strconv.Itoa(params.ReservationTimes[0].Day())
     date := year + "-" + month + "-" + day
     dayField := `day=` + date
@@ -293,6 +293,7 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
         return nil, err
     }
 
+
     // JSON structure is complicated here, see api/resy/doc.go for full explanation
     jsonResultsMap := jsonTopLevelMap["results"].(map[string]interface{}) 
     jsonVenuesList := jsonResultsMap["venues"].([]interface{})
@@ -301,7 +302,7 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
     }
     jsonVenueMap := jsonVenuesList[0].(map[string]interface{})
     jsonSlotsList := jsonVenueMap["slots"].([]interface{}) 
-    for i:=0; i < len(params.ReservationTimes); i++ {
+    for i := 0; i < len(params.ReservationTimes); i++ {
 
         currentTime := params.ReservationTimes[i]
         for j:=0; j < len(jsonSlotsList); j++ {

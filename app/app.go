@@ -391,8 +391,6 @@ a reservation at a given time
 */
 func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, output chan<- OperationResult) {
  
-    minAuthTime := a.API.AuthMinExpire()
-
     // if this date is not in the future, err 
     if params.RequestTime.Before(time.Now().UTC()) {
         output <- OperationResult{Response: nil, Err: ErrTimeFut}     
@@ -400,6 +398,7 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, ou
         return
     }
 
+    minAuthTime := a.API.AuthMinExpire()
     authDate := params.RequestTime.Add(-1 * minAuthTime)
     if (!authDate.Before(time.Now().UTC())) {
         select {
@@ -413,13 +412,13 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, ou
     }
 
     loginResp, err := a.API.Login(api.LoginParam(params.Login))
+
     if err != nil {
        output<- OperationResult{Response: nil, Err:err}
        close(output)
        return
     }
  
-
     // sleep with ability to cancel 
     select {
     case <-time.After(time.Until(params.RequestTime)):
@@ -428,7 +427,6 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, ou
         close(output)
         return
     }
-
 
     // reserve 
     reserveResp, err := a.API.Reserve(
