@@ -9,6 +9,7 @@ import (
     "errors"
     "time"
     "strconv"
+    "fmt"
 )
 
 var (
@@ -551,7 +552,7 @@ func (a *AppCtx) OperationsToString() (string, error) {
             case SuccessStatusType:
                 time := operation.Result.Response.Time()
                 opLstStr += "Succeeded\n"
-                opLstStr += "\tResult: " + strconv.Itoa(time.Hour()) + ":" + strconv.Itoa(time.Minute())
+                opLstStr += fmt.Sprintf("\tResult: %02d:%02d", time.Hour(), time.Minute())
             case FailStatusType:
                 err := operation.Result.Err.Error()
                 opLstStr += "Failed\n"
