@@ -173,17 +173,36 @@ func (c *ResolvedCLI) parseRats(in map[string][]string) (*app.ReserveAtTimeParam
     if len(resDaySplt) != 3 {
         return nil, ErrInvDate
     }
-    req.Year = resDaySplt[0] 
-    req.Month = resDaySplt[1]
-    req.Day = resDaySplt[2]
-    req.ReservationTimes = make([]api.Time, len(in["resT"]), len(in["resT"]))
+
+    reqYear, err := strconv.Atoi(resDaySplt[0])
+    if err != nil {
+        return nil, err
+    }
+    reqMonth, err := strconv.Atoi(resDaySplt[1])
+    if err != nil {
+        return nil, err
+    }
+    reqDay, err := strconv.Atoi(resDaySplt[2])
+    if err != nil {
+        return nil, err
+    }
+
+    req.ReservationTimes = make([]time.Time, len(in["resT"]), len(in["resT"]))
     for i, timeStr := range in["resT"] {
         timeSplt := strings.Split(timeStr, ":")        
         if len(timeSplt) != 2 {
             return nil, ErrInvDate
         }
-        req.ReservationTimes[i].Hour = timeSplt[0]
-        req.ReservationTimes[i].Minute = timeSplt[1]
+        reqHour, err := strconv.Atoi(timeSplt[0])
+        if err != nil {
+            return nil, err
+        }
+        reqMin, err := strconv.Atoi(timeSplt[1])
+        if err != nil {
+            return nil, err
+        }
+        req.ReservationTimes[i] = time.Date(reqYear, time.Month(reqMonth), reqDay, reqHour, reqMin, 0, 0, time.Local)
+
     }
     ps, err := strconv.ParseInt(in["ps"][0], 10, 64)
     if err != nil {
@@ -219,12 +238,7 @@ func (c *ResolvedCLI) parseRats(in map[string][]string) (*app.ReserveAtTimeParam
     }
     timeLoc := time.Date(int(year), time.Month(int(month)), int(day), int(hour), int(minute), 0, 0, time.Local)
     timeUTC := timeLoc.UTC()
-    yearu, monthu, dayu := timeUTC.Date()
-    req.RequestYear = strconv.Itoa(yearu)
-    req.RequestMonth = strconv.Itoa(int(monthu))
-    req.RequestDay = strconv.Itoa(dayu)
-    req.RequestTime.Hour = strconv.Itoa(timeUTC.Hour())
-    req.RequestTime.Minute =  strconv.Itoa(timeUTC.Minute())
+    req.RequestTime = timeUTC
     return &req, nil
 }
 
@@ -278,17 +292,33 @@ func (c *ResolvedCLI) parseRais(in map[string][]string) (*app.ReserveAtIntervalP
     if len(resDaySplt) != 3 {
         return nil, ErrInvDate
     }
-    req.Year = resDaySplt[0] 
-    req.Month = resDaySplt[1]
-    req.Day = resDaySplt[2]
-    req.ReservationTimes = make([]api.Time, len(in["resT"]), len(in["resT"]))
+    reqYear, err := strconv.Atoi(resDaySplt[0])
+    if err != nil {
+        return nil, err
+    }
+    reqMonth, err := strconv.Atoi(resDaySplt[1])
+    if err != nil {
+        return nil, err
+    }
+    reqDay, err := strconv.Atoi(resDaySplt[2])
+    if err != nil {
+        return nil, err
+    }
+    req.ReservationTimes = make([]time.Time, len(in["resT"]), len(in["resT"]))
     for i, timeStr := range in["resT"] {
         timeSplt := strings.Split(timeStr, ":")        
         if len(timeSplt) != 2 {
             return nil, ErrInvDate
         }
-        req.ReservationTimes[i].Hour = timeSplt[0]
-        req.ReservationTimes[i].Minute = timeSplt[1]
+        reqHour, err := strconv.Atoi(timeSplt[0])
+        if err != nil {
+            return nil, err
+        }
+        reqMin, err := strconv.Atoi(timeSplt[1])
+        if err != nil {
+            return nil, err
+        }
+        req.ReservationTimes[i] = time.Date(reqYear, time.Month(reqMonth), reqDay, reqHour, reqMin, 0, 0, time.Local)
     }
     ps, err := strconv.ParseInt(in["ps"][0], 10, 64)
     if err != nil {
@@ -301,9 +331,17 @@ func (c *ResolvedCLI) parseRais(in map[string][]string) (*app.ReserveAtIntervalP
     if len(repIntSplt) != 2 {
         return nil, ErrInvDate
     }
-    req.RepeatInterval.Hour = repIntSplt[0]
-    req.RepeatInterval.Minute = repIntSplt[1]
- 
+
+    repHour, err := strconv.Atoi(repIntSplt[0])
+    if err != nil {
+        return nil, err
+    }
+    repMin, err := strconv.Atoi(repIntSplt[1])
+    if err != nil {
+        return nil, err
+    }
+    req.RepeatInterval = time.Hour * time.Duration(repHour) + time.Minute * time.Duration(repMin)
+
     return &req, nil
 }
 
