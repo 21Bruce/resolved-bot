@@ -56,5 +56,15 @@ Search:
     reservation request.
     
 **********************************************************************   
+
+AuthMinExpire:
+
+    The AuthMinExpire function provides the minimum time irresepective
+    of time zone that a login token from the Login function is valid.
+    This function returns a constant value. If a null value is
+    returned, the login token is valid indefinitely.
+
+**********************************************************************   
+
 */
 package api

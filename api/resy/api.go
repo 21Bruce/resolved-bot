@@ -13,6 +13,7 @@ import (
     "bytes"
     "strconv"
     "strings"
+    "time"
 )
 
 /*
@@ -124,15 +125,22 @@ func (a *API) Login(params api.LoginParam) (*api.LoginResponse, error) {
     defer response.Body.Close()
 
     responseBody, err := io.ReadAll(response.Body)
+
     if err != nil {
         return nil, err
     }
+
 
     var jsonMap map[string]interface{}
     err = json.Unmarshal(responseBody, &jsonMap)
     if err != nil {
         return nil, err
     }
+
+    if jsonMap["payment_method_id"] == nil {
+        return nil, api.ErrNoPayInfo
+    }
+
 
     loginResponse := api.LoginResponse{
         ID:              int64(jsonMap["id"].(float64)),
@@ -236,7 +244,10 @@ Purpose: Resy implementation of the Reserve api func
 func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
     
     // converting fields to url query format
-    date := params.Year + "-" + params.Month + "-" + params.Day
+    year := strconv.Itoa(params.ReservationTimes[0].Year())
+    month := strconv.Itoa(int(params.ReservationTimes[0].Month()))
+    day := strconv.Itoa(params.ReservationTimes[0].Day())
+    date := year + "-" + month + "-" + day
     dayField := `day=` + date
     authField := `x-resy-auth-token=` + params.LoginResp.AuthToken
     latField := `lat=0`
@@ -282,12 +293,16 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
         return nil, err
     }
 
+
     // JSON structure is complicated here, see api/resy/doc.go for full explanation
     jsonResultsMap := jsonTopLevelMap["results"].(map[string]interface{}) 
-    jsonVenuesList := jsonResultsMap["venues"].([]interface{}) 
+    jsonVenuesList := jsonResultsMap["venues"].([]interface{})
+    if len(jsonVenuesList) == 0 {
+        return nil, api.ErrNoOffer
+    }
     jsonVenueMap := jsonVenuesList[0].(map[string]interface{})
     jsonSlotsList := jsonVenueMap["slots"].([]interface{}) 
-    for i:=0; i < len(params.ReservationTimes); i++ {
+    for i := 0; i < len(params.ReservationTimes); i++ {
 
         currentTime := params.ReservationTimes[i]
         for j:=0; j < len(jsonSlotsList); j++ {
@@ -302,8 +317,19 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
             startFields := strings.Split(startRaw, " ")
             // isolate time field and split to get ["HrHr","MnMn"]
             timeFields := strings.Split(startFields[1], ":")
-            // if time field matches of slot matches current selected ResTime, move to config step 
-            if timeFields[0] == currentTime.Hour && timeFields[1] == currentTime.Minute {
+            // if time field matches of slot matches current selected ResTime, move to config step
+
+            hourFieldInt, err := strconv.Atoi(timeFields[0])
+            if err != nil {
+                return nil, err
+            }
+
+            minFieldInt, err := strconv.Atoi(timeFields[1])
+            if err != nil {
+                return nil, err
+            }
+
+            if hourFieldInt == currentTime.Hour() && minFieldInt == currentTime.Minute() {
                 jsonConfigMap := jsonSlotMap["config"].(map[string]interface{})
                 configToken := jsonConfigMap["token"].(string)
                 configIDField := `config_id=` + url.QueryEscape(configToken)
@@ -393,6 +419,18 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
    
     // we only reach here if every time failed, meaning no table
     return nil, api.ErrNoTable 
+}
+
+/*
+Name: AuthMinExpire 
+Type: API Func 
+Purpose: Resy implementation of the AuthMinExpire api func.
+The largest minimum validity time is 6 days.
+*/
+func (a *API) AuthMinExpire() (time.Duration) {
+    /* 6 days */
+    var d time.Duration = time.Hour * 24 * 6
+    return d
 }
 
 //func (a *API) Cancel(params api.CancelParam) (*api.CancelResponse, error) {

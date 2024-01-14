@@ -7,6 +7,7 @@ package api
 import (
     "errors"
     "strconv"
+    "time"
 )
 
 var (
@@ -15,6 +16,8 @@ var (
     ErrNetwork = errors.New("unknown network error")
     ErrPastDate = errors.New("latest reservation time has passed")
     ErrTimeNull = errors.New("times list empty")
+    ErrNoOffer = errors.New("table is not offered on given date")
+    ErrNoPayInfo = errors.New("no payment info on account")
 )
 
 /*
@@ -96,12 +99,27 @@ type SearchResult struct {
 /*
 Name: Time
 Type: API Input Struct
-Purpose: Provide a go indepent struct for representing time
+Purpose: Provide a go independent struct for representing time
 */
+/*
 type Time struct {
+    CTime time.Time
+}
+*/
+
+/*
+Name: LongTime
+Type: API Input Struct
+Purpose: Provide a go indepent struct for representing time
+at a long scale(i.e. years + months + days)
+*/
+/*type LongTime struct {
+    Year            string
+    Month           string
+    Day             string
     Hour            string
     Minute          string
-}
+}*/
 
 /*
 Name: ReserveParam
@@ -110,10 +128,7 @@ Purpose: Input information to the 'Reserve' api function
 */
 type ReserveParam struct {
     VenueID          int64
-    Day              string
-    Month            string
-    Year             string
-    ReservationTimes []Time
+    ReservationTimes []time.Time
     PartySize        int
     LoginResp        LoginResponse
 }
@@ -124,7 +139,7 @@ Type: API Func Output Struct
 Purpose: Output information from the 'Reserve' api function 
 */
 type ReserveResponse struct {
-    ReservationTime Time
+    ReservationTime time.Time
 }
 
 /*
@@ -138,6 +153,7 @@ type API interface {
     Login(params LoginParam) (*LoginResponse, error)
     Search(params SearchParam) (*SearchResponse, error)
     Reserve(params ReserveParam) (*ReserveResponse, error)
+    AuthMinExpire() (time.Duration)
 }
 
 /*
