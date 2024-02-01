@@ -302,119 +302,128 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
     }
     jsonVenueMap := jsonVenuesList[0].(map[string]interface{})
     jsonSlotsList := jsonVenueMap["slots"].([]interface{}) 
-    for i := 0; i < len(params.ReservationTimes); i++ {
+    for k := 0; k < len(params.TableTypes) || (len(params.TableTypes) == 0 && k == 0) ; k++ {
+        // table type to search for, we decide this early on since its the least important thing
+        /*
+        if len(params.TableTypes) == 0 {
+            currentTable := nil 
+        } else {
+            currentTable := params.TableTypes[k]
+        }
+        */
+        for i := 0; i < len(params.ReservationTimes); i++ {
 
-        currentTime := params.ReservationTimes[i]
-        for j:=0; j < len(jsonSlotsList); j++ {
-            // if any errs appear, we just move to next time on list(i.e. continue)
+            currentTime := params.ReservationTimes[i]
+            for j:=0; j < len(jsonSlotsList); j++ {
+                // if any errs appear, we just move to next time on list(i.e. continue)
 
-            jsonSlotMap := jsonSlotsList[j].(map[string]interface{})
-            jsonDateMap:= jsonSlotMap["date"].(map[string]interface{})
+                jsonSlotMap := jsonSlotsList[j].(map[string]interface{})
+                jsonDateMap:= jsonSlotMap["date"].(map[string]interface{})
 
-            // start contains the date for this slot in format "YrYrYrYr-MoMo-DyDy HrHr:MnMn"
-            startRaw := jsonDateMap["start"].(string)
-            // split to get ["YrYrYrYr-MoMo-DyDy", "HrHr:MnMn"]
-            startFields := strings.Split(startRaw, " ")
-            // isolate time field and split to get ["HrHr","MnMn"]
-            timeFields := strings.Split(startFields[1], ":")
-            // if time field matches of slot matches current selected ResTime, move to config step
+                // start contains the date for this slot in format "YrYrYrYr-MoMo-DyDy HrHr:MnMn"
+                startRaw := jsonDateMap["start"].(string)
+                // split to get ["YrYrYrYr-MoMo-DyDy", "HrHr:MnMn"]
+                startFields := strings.Split(startRaw, " ")
+                // isolate time field and split to get ["HrHr","MnMn"]
+                timeFields := strings.Split(startFields[1], ":")
+                // if time field matches of slot matches current selected ResTime, move to config step
 
-            hourFieldInt, err := strconv.Atoi(timeFields[0])
-            if err != nil {
-                return nil, err
-            }
-
-            minFieldInt, err := strconv.Atoi(timeFields[1])
-            if err != nil {
-                return nil, err
-            }
-
-            if hourFieldInt == currentTime.Hour() && minFieldInt == currentTime.Minute() {
-                jsonConfigMap := jsonSlotMap["config"].(map[string]interface{})
-                configToken := jsonConfigMap["token"].(string)
-                configIDField := `config_id=` + url.QueryEscape(configToken)
-                // Reuse same fields from def of findUrl(see api/resy/doc.go)
-                fields = []string{dayField, partySizeField, authField, venueIDField, configIDField}
-
-                detailUrl := "https://api.resy.com/3/details?" + strings.Join(fields, "&") 
-
-                requestDetail, err := http.NewRequest("GET", detailUrl, bytes.NewBuffer([]byte{}))
-                if err != nil {
-                    continue 
-                }
-
-                requestDetail.Header.Set("Authorization", `ResyAPI api_key="` + a.APIKey + `"`)
-                requestDetail.Header.Set("Host", `api.resy.com`)
-                requestDetail.Header.Set("X-Resy-Auth-Token", params.LoginResp.AuthToken)
-                requestDetail.Header.Set("X-Resy-Universal-Auth-Token", params.LoginResp.AuthToken)
-            
-                responseDetail, err := client.Do(requestDetail)
-                if err != nil {
-                    continue
-                }
-
-                if isCodeFail(responseDetail.StatusCode) {
-                    return nil, api.ErrNetwork
-                }
-
-                defer responseDetail.Body.Close()
-
-                responseDetailBody, err := io.ReadAll(responseDetail.Body)
-                if err != nil {
-                    continue
-                }
-
-                var jsonTopLevelMap map[string]interface{}
-                err = json.Unmarshal(responseDetailBody, &jsonTopLevelMap)
+                hourFieldInt, err := strconv.Atoi(timeFields[0])
                 if err != nil {
                     return nil, err
                 }
-                jsonBookTokenMap := jsonTopLevelMap["book_token"].(map[string]interface{}) 
-                bookToken := jsonBookTokenMap["value"].(string)
+
+                minFieldInt, err := strconv.Atoi(timeFields[1])
+                if err != nil {
+                    return nil, err
+                }
+
+                if hourFieldInt == currentTime.Hour() && minFieldInt == currentTime.Minute() {
+                    jsonConfigMap := jsonSlotMap["config"].(map[string]interface{})
+                    configToken := jsonConfigMap["token"].(string)
+                    configIDField := `config_id=` + url.QueryEscape(configToken)
+                    // Reuse same fields from def of findUrl(see api/resy/doc.go)
+                    fields = []string{dayField, partySizeField, authField, venueIDField, configIDField}
+
+                    detailUrl := "https://api.resy.com/3/details?" + strings.Join(fields, "&") 
+
+                    requestDetail, err := http.NewRequest("GET", detailUrl, bytes.NewBuffer([]byte{}))
+                    if err != nil {
+                        continue 
+                    }
+
+                    requestDetail.Header.Set("Authorization", `ResyAPI api_key="` + a.APIKey + `"`)
+                    requestDetail.Header.Set("Host", `api.resy.com`)
+                    requestDetail.Header.Set("X-Resy-Auth-Token", params.LoginResp.AuthToken)
+                    requestDetail.Header.Set("X-Resy-Universal-Auth-Token", params.LoginResp.AuthToken)
+                
+                    responseDetail, err := client.Do(requestDetail)
+                    if err != nil {
+                        continue
+                    }
+
+                    if isCodeFail(responseDetail.StatusCode) {
+                        return nil, api.ErrNetwork
+                    }
+
+                    defer responseDetail.Body.Close()
+
+                    responseDetailBody, err := io.ReadAll(responseDetail.Body)
+                    if err != nil {
+                        continue
+                    }
+
+                    var jsonTopLevelMap map[string]interface{}
+                    err = json.Unmarshal(responseDetailBody, &jsonTopLevelMap)
+                    if err != nil {
+                        return nil, err
+                    }
+                    jsonBookTokenMap := jsonTopLevelMap["book_token"].(map[string]interface{}) 
+                    bookToken := jsonBookTokenMap["value"].(string)
  
-                // if config step yielded a book token, move to 'reserve' step
-                bookUrl := "https://api.resy.com/3/book?" + strings.Join(fields, "&") 
+                    // if config step yielded a book token, move to 'reserve' step
+                    bookUrl := "https://api.resy.com/3/book?" + strings.Join(fields, "&") 
 
-                bookField := "book_token=" + url.QueryEscape(bookToken)
-                paymentMethodStr := `{"id":` + strconv.FormatInt(params.LoginResp.PaymentMethodID, 10) + `}`
-                paymentMethodField := "struct_payment_method=" + url.QueryEscape(paymentMethodStr)
-                requestBookBodyStr := bookField + "&" + paymentMethodField + "&" + "source_id=resy.com-venue-details"
-                requestBook, err := http.NewRequest("POST", bookUrl, bytes.NewBuffer([]byte(requestBookBodyStr)))
-                requestBook.Header.Set("Authorization", `ResyAPI api_key="` + a.APIKey + `"`)
-                requestBook.Header.Set("Content-Type", `application/x-www-form-urlencoded`)
-                requestBook.Header.Set("Host", `api.resy.com`)
-                requestBook.Header.Set("X-Resy-Auth-Token", params.LoginResp.AuthToken)
-                requestBook.Header.Set("X-Resy-Universal-Auth-Token", params.LoginResp.AuthToken)
-                requestBook.Header.Set("Referer", "https://resy.com/")
-                responseBook, err := client.Do(requestBook)
-                if err != nil {
-                   continue 
+                    bookField := "book_token=" + url.QueryEscape(bookToken)
+                    paymentMethodStr := `{"id":` + strconv.FormatInt(params.LoginResp.PaymentMethodID, 10) + `}`
+                    paymentMethodField := "struct_payment_method=" + url.QueryEscape(paymentMethodStr)
+                    requestBookBodyStr := bookField + "&" + paymentMethodField + "&" + "source_id=resy.com-venue-details"
+                    requestBook, err := http.NewRequest("POST", bookUrl, bytes.NewBuffer([]byte(requestBookBodyStr)))
+                    requestBook.Header.Set("Authorization", `ResyAPI api_key="` + a.APIKey + `"`)
+                    requestBook.Header.Set("Content-Type", `application/x-www-form-urlencoded`)
+                    requestBook.Header.Set("Host", `api.resy.com`)
+                    requestBook.Header.Set("X-Resy-Auth-Token", params.LoginResp.AuthToken)
+                    requestBook.Header.Set("X-Resy-Universal-Auth-Token", params.LoginResp.AuthToken)
+                    requestBook.Header.Set("Referer", "https://resy.com/")
+                    responseBook, err := client.Do(requestBook)
+                    if err != nil {
+                       continue 
+                    }
+
+                    if isCodeFail(responseBook.StatusCode) {
+                        continue
+                    }
+
+                    responseBookBody, err := io.ReadAll(responseBook.Body)
+                    if err != nil {
+                        continue
+                    }
+
+                    err = json.Unmarshal(responseBookBody, &jsonTopLevelMap)
+                    if err != nil {
+                        continue
+                    }
+
+                    // if everything worked out, return time
+                    resp := api.ReserveResponse{
+                        ReservationTime: currentTime,
+                    }
+
+                    return &resp, nil
+
                 }
-
-                if isCodeFail(responseBook.StatusCode) {
-                    continue
-                }
-
-                responseBookBody, err := io.ReadAll(responseBook.Body)
-                if err != nil {
-                    continue
-                }
-
-                err = json.Unmarshal(responseBookBody, &jsonTopLevelMap)
-                if err != nil {
-                    continue
-                }
-
-                // if everything worked out, return time
-                resp := api.ReserveResponse{
-                    ReservationTime: currentTime,
-                }
-
-                return &resp, nil
-
             }
         }
-         
     }
    
     // we only reach here if every time failed, meaning no table

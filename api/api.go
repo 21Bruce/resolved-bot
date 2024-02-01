@@ -111,16 +111,15 @@ at a long scale(i.e. years + months + days)
     Minute          string
 }*/
 
-type TableType int64
+type TableType string
 
 const (
-    Empty TableType = iota
-    DiningRoom
-    Indoor
-    Outdoor
-    Patio
-    Bar
-    Lounge
+    DiningRoom TableType = "Dining Room"
+    Indoor               = "Indoor"
+    Outdoor              = "Outdoor"
+    Patio                = "Patio"
+    Bar                  = "Bar"
+    Lounge               = "Lounge"
 )
 
 /*
@@ -132,7 +131,7 @@ type ReserveParam struct {
     VenueID          int64
     ReservationTimes []time.Time
     PartySize        int
-    Table            TableType
+    TableTypes       []TableType
     LoginResp        LoginResponse
 }
 
