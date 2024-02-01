@@ -163,6 +163,33 @@ func (c *ResolvedCLI) parseRats(in map[string][]string) (*app.ReserveAtTimeParam
     if in["p"] != nil {
         req.Login.Password = in["p"][0]
     }
+    if in["t"] != nil {
+	req.TableTypes = make ([]TableTypes, len(in["t"]), len(in["t"])) 
+	for i := 0; i < len(in["t"]); i++ {
+            currType = in["t"][i]
+	    if strings.Contains(currType, api.DiningRoom) {
+                req.TableTypes[i] = api.DiningRoom
+	    }
+	    else if strings.Contains(currType, api.Indoor) {
+                req.TableTypes[i] = api.Indoor
+	    }
+	    else if strings.Contains(currType, api.Outdoor) {
+                req.TableTypes[i] = api.Outdoor
+	    }
+	    else if strings.Contains(currType, api.Patio) {
+                req.TableTypes[i] = api.Patio
+	    }
+	    else if strings.Contains(currType, api.Bar) {
+                req.TableTypes[i] = api.Bar
+	    }
+	    else if strings.Contains(currType, api.Lounge) {
+                req.TableTypes[i] = api.Lounge
+	    } 
+	    else if strings.Contains(currType, api.Booth) {
+                req.TableTypes[i] = api.Booth
+	    }
+	}	
+    }    
     id, err := strconv.ParseInt(in["v"][0], 10, 64)
     if err != nil {
         return nil, err
@@ -283,8 +310,32 @@ func (c *ResolvedCLI) parseRais(in map[string][]string) (*app.ReserveAtIntervalP
         req.Login.Password = in["p"][0]
     } 
     if in["t"] != nil {
-	
-    }
+	req.TableTypes = make ([]TableTypes, len(in["t"]), len(in["t"])) 
+	for i := 0; i < len(in["t"]); i++ {
+            currType = in["t"][i]
+	    if strings.Contains(currType, api.DiningRoom) {
+                req.TableTypes[i] = api.DiningRoom
+	    }
+	    else if strings.Contains(currType, api.Indoor) {
+                req.TableTypes[i] = api.Indoor
+	    }
+	    else if strings.Contains(currType, api.Outdoor) {
+                req.TableTypes[i] = api.Outdoor
+	    }
+	    else if strings.Contains(currType, api.Patio) {
+                req.TableTypes[i] = api.Patio
+	    }
+	    else if strings.Contains(currType, api.Bar) {
+                req.TableTypes[i] = api.Bar
+	    }
+	    else if strings.Contains(currType, api.Lounge) {
+                req.TableTypes[i] = api.Lounge
+	    } 
+	    else if strings.Contains(currType, api.Booth) {
+                req.TableTypes[i] = api.Booth
+	    }
+	}	
+    } 
     id, err := strconv.ParseInt(in["v"][0], 10, 64)
     if err != nil {
         return nil, err
@@ -718,26 +769,6 @@ func (c *ResolvedCLI) initParseCtx() {
                 Name: "p",
                 LongName: "password",
                 Description: "This flag is required. Provides login password",
-                ValidationCtx: cli.FlagValidationCtx{
-                    Required: true,
-                    MaxArgs: 1,
-                    MinArgs: 1,
-                },
-            },
-        },
-        Handler: c.handleLogin,
-    }
-
-    // 'logout' command
-    logoutCommand := cli.Command{
-        Name: "logout",
-        Description: "Clear default login credentials",
-        Flags: []cli.Flag{},
-        Handler: c.handleLogout,
-    }
-
-    // 'cancel' command
-    cancelCommand := cli.Command{
         Name: "cancel",
         Description: "Cancel operations given ids",
         Flags: []cli.Flag{
