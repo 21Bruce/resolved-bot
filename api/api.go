@@ -97,6 +97,11 @@ type SearchResult struct {
     Neighborhood    string
 }
 
+/*
+Name: TableType 
+Type: API Input Struct
+Purpose: Allow an opaque interface for choosing table/seating type
+*/
 type TableType string
 
 const (
