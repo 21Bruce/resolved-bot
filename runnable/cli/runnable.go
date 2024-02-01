@@ -21,6 +21,8 @@ import (
 var (
     // Error if we can't parse date properly
     ErrInvDate = errors.New("invalid date format")
+    // Error if we can't parse table type properly
+    ErrInvTableType = errors.New("invalid table type")
 )
 
 /*
@@ -164,32 +166,28 @@ func (c *ResolvedCLI) parseRats(in map[string][]string) (*app.ReserveAtTimeParam
         req.Login.Password = in["p"][0]
     }
     if in["t"] != nil {
-	req.TableTypes = make ([]TableTypes, len(in["t"]), len(in["t"])) 
-	for i := 0; i < len(in["t"]); i++ {
-            currType = in["t"][i]
-	    if strings.Contains(currType, api.DiningRoom) {
+	    req.TableTypes = make([]api.TableType, len(in["t"]), len(in["t"])) 
+	    for i := 0; i < len(in["t"]); i++ {
+            currType := strings.ToLower(in["t"][i])
+	        if strings.Contains(currType, string(api.DiningRoom)) {
                 req.TableTypes[i] = api.DiningRoom
-	    }
-	    else if strings.Contains(currType, api.Indoor) {
+	        } else if strings.Contains(currType, string(api.Indoor)) {
                 req.TableTypes[i] = api.Indoor
-	    }
-	    else if strings.Contains(currType, api.Outdoor) {
+	        } else if strings.Contains(currType, string(api.Outdoor)) {
                 req.TableTypes[i] = api.Outdoor
-	    }
-	    else if strings.Contains(currType, api.Patio) {
+	        } else if strings.Contains(currType, string(api.Patio)) {
                 req.TableTypes[i] = api.Patio
-	    }
-	    else if strings.Contains(currType, api.Bar) {
+	        } else if strings.Contains(currType, string(api.Bar)) {
                 req.TableTypes[i] = api.Bar
-	    }
-	    else if strings.Contains(currType, api.Lounge) {
+	        } else if strings.Contains(currType, string(api.Lounge)) {
                 req.TableTypes[i] = api.Lounge
-	    } 
-	    else if strings.Contains(currType, api.Booth) {
+	        } else if strings.Contains(currType, string(api.Booth)) {
                 req.TableTypes[i] = api.Booth
-	    }
-	}	
-    }    
+	        } else {
+                return nil, ErrInvTableType
+            }
+	    }	
+    }
     id, err := strconv.ParseInt(in["v"][0], 10, 64)
     if err != nil {
         return nil, err
@@ -310,32 +308,28 @@ func (c *ResolvedCLI) parseRais(in map[string][]string) (*app.ReserveAtIntervalP
         req.Login.Password = in["p"][0]
     } 
     if in["t"] != nil {
-	req.TableTypes = make ([]TableTypes, len(in["t"]), len(in["t"])) 
-	for i := 0; i < len(in["t"]); i++ {
-            currType = in["t"][i]
-	    if strings.Contains(currType, api.DiningRoom) {
+	    req.TableTypes = make([]api.TableType, len(in["t"]), len(in["t"])) 
+	    for i := 0; i < len(in["t"]); i++ {
+            currType := in["t"][i]
+	        if strings.Contains(currType, string(api.DiningRoom)) {
                 req.TableTypes[i] = api.DiningRoom
-	    }
-	    else if strings.Contains(currType, api.Indoor) {
+	        } else if strings.Contains(currType, string(api.Indoor)) {
                 req.TableTypes[i] = api.Indoor
-	    }
-	    else if strings.Contains(currType, api.Outdoor) {
+	        } else if strings.Contains(currType, string(api.Outdoor)) {
                 req.TableTypes[i] = api.Outdoor
-	    }
-	    else if strings.Contains(currType, api.Patio) {
+	        } else if strings.Contains(currType, string(api.Patio)) {
                 req.TableTypes[i] = api.Patio
-	    }
-	    else if strings.Contains(currType, api.Bar) {
+	        } else if strings.Contains(currType, string(api.Bar)) {
                 req.TableTypes[i] = api.Bar
-	    }
-	    else if strings.Contains(currType, api.Lounge) {
+	        } else if strings.Contains(currType, string(api.Lounge)) {
                 req.TableTypes[i] = api.Lounge
-	    } 
-	    else if strings.Contains(currType, api.Booth) {
+	        } else if strings.Contains(currType, string(api.Booth)) {
                 req.TableTypes[i] = api.Booth
-	    }
-	}	
-    } 
+	        } else {
+                return nil, ErrInvTableType
+            }
+	    }	
+    }    
     id, err := strconv.ParseInt(in["v"][0], 10, 64)
     if err != nil {
         return nil, err
@@ -596,16 +590,16 @@ func (c *ResolvedCLI) initParseCtx() {
                     MaxArgs: 1,
                 },
             },
-	    cli.Flag{
-		Name: "t",
-		LongName: "table",
-		Description: "This flag is optional. Used to set the type of table in order of preference",
-		ValidationCtx: cli.FlagValidationCtx{
-		    Required: false,
-		    MinArgs: 1,
-		    MaxArgs: cli.InfiniteArgs, 
-		},
-	    },
+	        cli.Flag{
+		        Name: "t",
+		        LongName: "table",
+		        Description: "This flag is optional. Used to set the type of table in order of preference",
+		        ValidationCtx: cli.FlagValidationCtx{
+		            Required: false,
+		            MinArgs: 1,
+		            MaxArgs: cli.InfiniteArgs, 
+		        },
+	        },
             cli.Flag{
                 Name: "resD",
                 LongName: "reservation-day",
@@ -686,16 +680,16 @@ func (c *ResolvedCLI) initParseCtx() {
                     MaxArgs: 1,
                 },
             },
-	    cli.Flag{
-		Name: "t",
-		LongName: "table",
-		Description: "This flag is optional. Used to set the type of table in order of preference",
-		ValidationCtx: cli.FlagValidationCtx{
-		    Required: false,
-		    MinArgs: 1,
-		    MaxArgs: cli.InfiniteArgs, 
-		},
-	    },
+	        cli.Flag{
+		        Name: "t",
+		        LongName: "table",
+		        Description: "This flag is optional. Used to set the type of table in order of preference",
+		        ValidationCtx: cli.FlagValidationCtx{
+		            Required: false,
+		            MinArgs: 1,
+		            MaxArgs: cli.InfiniteArgs, 
+		        },
+	        },
             cli.Flag{
                 Name: "resD",
                 LongName: "reservation-day",
@@ -769,6 +763,26 @@ func (c *ResolvedCLI) initParseCtx() {
                 Name: "p",
                 LongName: "password",
                 Description: "This flag is required. Provides login password",
+                ValidationCtx: cli.FlagValidationCtx{
+                    Required: true,
+                    MaxArgs: 1,
+                    MinArgs: 1,
+                },
+            },
+        },
+        Handler: c.handleLogin,
+    }
+
+    // 'logout' command
+    logoutCommand := cli.Command{
+        Name: "logout",
+        Description: "Clear default login credentials",
+        Flags: []cli.Flag{},
+        Handler: c.handleLogout,
+    }
+
+    // 'cancel' command
+    cancelCommand := cli.Command{
         Name: "cancel",
         Description: "Cancel operations given ids",
         Flags: []cli.Flag{
