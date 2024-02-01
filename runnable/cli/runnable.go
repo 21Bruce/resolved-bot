@@ -281,6 +281,9 @@ func (c *ResolvedCLI) parseRais(in map[string][]string) (*app.ReserveAtIntervalP
     }
     if in["p"] != nil {
         req.Login.Password = in["p"][0]
+    } 
+    if in["t"] != nil {
+	
     }
     id, err := strconv.ParseInt(in["v"][0], 10, 64)
     if err != nil {
@@ -542,6 +545,16 @@ func (c *ResolvedCLI) initParseCtx() {
                     MaxArgs: 1,
                 },
             },
+	    cli.Flag{
+		Name: "t",
+		LongName: "table",
+		Description: "This flag is optional. Used to set the type of table in order of preference",
+		ValidationCtx: cli.FlagValidationCtx{
+		    Required: false,
+		    MinArgs: 1,
+		    MaxArgs: cli.InfiniteArgs, 
+		},
+	    },
             cli.Flag{
                 Name: "resD",
                 LongName: "reservation-day",
@@ -622,6 +635,16 @@ func (c *ResolvedCLI) initParseCtx() {
                     MaxArgs: 1,
                 },
             },
+	    cli.Flag{
+		Name: "t",
+		LongName: "table",
+		Description: "This flag is optional. Used to set the type of table in order of preference",
+		ValidationCtx: cli.FlagValidationCtx{
+		    Required: false,
+		    MinArgs: 1,
+		    MaxArgs: cli.InfiniteArgs, 
+		},
+	    },
             cli.Flag{
                 Name: "resD",
                 LongName: "reservation-day",
