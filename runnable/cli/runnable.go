@@ -593,7 +593,7 @@ func (c *ResolvedCLI) initParseCtx() {
 	        cli.Flag{
 		        Name: "t",
 		        LongName: "table",
-		        Description: "This flag is optional. Used to set the type of table in order of preference",
+		        Description: "This flag is optional. Used to set the type of table in order of preference. The available types are dining, patio, bar, lounge, indoor, and outdoor",
 		        ValidationCtx: cli.FlagValidationCtx{
 		            Required: false,
 		            MinArgs: 1,
@@ -683,7 +683,7 @@ func (c *ResolvedCLI) initParseCtx() {
 	        cli.Flag{
 		        Name: "t",
 		        LongName: "table",
-		        Description: "This flag is optional. Used to set the type of table in order of preference",
+		        Description: "This flag is optional. Used to set the type of table in order of preference. The available types are dining, patio, bar, lounge, indoor, and outdoor",
 		        ValidationCtx: cli.FlagValidationCtx{
 		            Required: false,
 		            MinArgs: 1,
