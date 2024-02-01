@@ -305,10 +305,10 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
     for k := 0; k < len(params.TableTypes) || (len(params.TableTypes) == 0 && k == 0) ; k++ {
         // table type to search for, we decide this early on since its the least important thing
         
-//        currentTableType := "" 
-//        if len(params.TableTypes) != 0 {
-//            currentTableType = params.TableTypes[k]
-//        }
+        currentTableType := api.DiningRoom
+        if len(params.TableTypes) != 0 {
+            currentTableType = params.TableTypes[k]
+        }
         
         for i := 0; i < len(params.ReservationTimes); i++ {
 
@@ -338,8 +338,9 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
                 }
 
                 jsonConfigMap := jsonSlotMap["config"].(map[string]interface{})
-               // tableType := strings.ToLower(jsonConfigMap["type"].(string))
-                if hourFieldInt == currentTime.Hour() && minFieldInt == currentTime.Minute() {
+                // get table type of this slot for comparison
+                tableType := strings.ToLower(jsonConfigMap["type"].(string))
+                if hourFieldInt == currentTime.Hour() && minFieldInt == currentTime.Minute() && (len(params.TableTypes) == 0 || strings.Contains(string(currentTableType), tableType)){
                     configToken := jsonConfigMap["token"].(string)
                     configIDField := `config_id=` + url.QueryEscape(configToken)
                     // Reuse same fields from def of findUrl(see api/resy/doc.go)
