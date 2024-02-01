@@ -97,30 +97,15 @@ type SearchResult struct {
     Neighborhood    string
 }
 
-/*
-Name: LongTime
-Type: API Input Struct
-Purpose: Provide a go indepent struct for representing time
-at a long scale(i.e. years + months + days)
-*/
-/*type LongTime struct {
-    Year            string
-    Month           string
-    Day             string
-    Hour            string
-    Minute          string
-}*/
-
-type TableType int64
+type TableType string
 
 const (
-    Empty TableType = iota
-    DiningRoom
-    Indoor
-    Outdoor
-    Patio
-    Bar
-    Lounge
+    DiningRoom TableType = "dining"
+    Indoor               = "indoor"
+    Outdoor              = "outdoor"
+    Patio                = "patio"
+    Bar                  = "bar"
+    Lounge               = "lounge"
 )
 
 /*
@@ -132,7 +117,7 @@ type ReserveParam struct {
     VenueID          int64
     ReservationTimes []time.Time
     PartySize        int
-    Table            TableType
+    TableTypes       []TableType
     LoginResp        LoginResponse
 }
 
