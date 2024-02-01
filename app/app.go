@@ -40,6 +40,7 @@ type SearchParam api.SearchParam
 
 type SearchResponse api.SearchResponse
 
+type TableType api.TableType
 /*
 Name: AppCtx
 Type: External App Struct
@@ -75,6 +76,7 @@ type ReserveAtIntervalParam struct {
     ReservationTimes []time.Time
     PartySize        int
     RepeatInterval   time.Duration
+    TableType 	     TableType
 }
 
 /*
@@ -89,6 +91,7 @@ type ReserveAtTimeParam struct {
     ReservationTimes []time.Time
     PartySize        int
     RequestTime      time.Time
+    TableType        TableType
 }
 
 /*
