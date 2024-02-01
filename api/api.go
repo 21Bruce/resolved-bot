@@ -106,6 +106,7 @@ const (
     Patio                = "patio"
     Bar                  = "bar"
     Lounge               = "lounge"
+    Booth                = "booth"
 )
 
 /*
