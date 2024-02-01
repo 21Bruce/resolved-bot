@@ -340,7 +340,7 @@ func (a *API) Reserve(params api.ReserveParam) (*api.ReserveResponse, error) {
                 jsonConfigMap := jsonSlotMap["config"].(map[string]interface{})
                 // get table type of this slot for comparison
                 tableType := strings.ToLower(jsonConfigMap["type"].(string))
-                if hourFieldInt == currentTime.Hour() && minFieldInt == currentTime.Minute() && (len(params.TableTypes) == 0 || strings.Contains(string(currentTableType), tableType)){
+                if hourFieldInt == currentTime.Hour() && minFieldInt == currentTime.Minute() && (len(params.TableTypes) == 0 || strings.Contains(tableType, string(currentTableType))){
                     configToken := jsonConfigMap["token"].(string)
                     configIDField := `config_id=` + url.QueryEscape(configToken)
                     // Reuse same fields from def of findUrl(see api/resy/doc.go)
