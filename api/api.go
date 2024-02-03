@@ -20,6 +20,7 @@ var (
     ErrNoPayInfo = errors.New("no payment info on account")
 )
 
+
 /*
 Name: LoginParam
 Type: API Func Input Struct
@@ -97,29 +98,21 @@ type SearchResult struct {
 }
 
 /*
-Name: Time
+Name: TableType 
 Type: API Input Struct
-Purpose: Provide a go independent struct for representing time
+Purpose: Allow an opaque interface for choosing table/seating type
 */
-/*
-type Time struct {
-    CTime time.Time
-}
-*/
+type TableType string
 
-/*
-Name: LongTime
-Type: API Input Struct
-Purpose: Provide a go indepent struct for representing time
-at a long scale(i.e. years + months + days)
-*/
-/*type LongTime struct {
-    Year            string
-    Month           string
-    Day             string
-    Hour            string
-    Minute          string
-}*/
+const (
+    DiningRoom TableType = "dining"
+    Indoor               = "indoor"
+    Outdoor              = "outdoor"
+    Patio                = "patio"
+    Bar                  = "bar"
+    Lounge               = "lounge"
+    Booth                = "booth"
+)
 
 /*
 Name: ReserveParam
@@ -130,6 +123,7 @@ type ReserveParam struct {
     VenueID          int64
     ReservationTimes []time.Time
     PartySize        int
+    TableTypes       []TableType
     LoginResp        LoginResponse
 }
 

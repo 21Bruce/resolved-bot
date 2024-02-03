@@ -233,6 +233,7 @@ Reserve:
                                                 "config": 
                                                     {
                                                         ...
+                                                        "type": "###TABLETYPE###",
                                                         "token": "###CONFTOKEN###",
                                                         ...
                                                     },
@@ -252,7 +253,8 @@ Reserve:
     Where ###YR###, ###MT###, ###DY###, ###HR###, and ###MN###, are
     the year, month, day, hour, and minute respectfully of an open slot in
     military time format, and the ###CONFTOKEN### is an identifier for the
-    slot used in the next request-response interaction.
+    slot used in the next request-response interaction. The string token ###TABLETYPE###
+    is the type of table that this slot corresponds to.
 
     The next pair of HTTP messages is informally referred to as the 'config' 
     step. We send a GET request with no body. The request has a dynamic URL:
