@@ -13,7 +13,10 @@ So far, items 1-3 are implemented, with future plans in the issues section label
 
 1. Install the go programming language, this can be done by searching "golang installation"
 2. clone this repository
-3. run `go build` in root directory of project 
+3. run `go build` in root directory of project
+
+If you would like to test new features, the `develop` branch is a decently tested staging area for new 
+feautres, usually 3 features ahead of `main`.
 
 ## How to use:
 
