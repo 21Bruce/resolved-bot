@@ -54,6 +54,7 @@ I'll walk through what each flag does:
 4. `-ps` or `--party-size` specifies the party size, in this case 2 people
 5. `-reqD` or `--request-date` specifies the date at which we want to make the request(basically the date we want to press the "reserve" button at). This should be supplied in military time, with format yyyy:mm:dd:hh:mm (year:month:day:hour:minute). In this case, we want to press
 "reserve" at midnight on september 1st, 2023.
+6. `-t` or `--table` is an optional flag that allows the user to specify a priority list of table types. So an example input is `-t outdoor dining`. The priority of reservations in this case is all times in `-resT` will be tried in priority order with the first table type specified, then another iteration of all reservation times with a second table type.
 
 Other flags include a `-e` flag for email and `-p` for password, but if logged in this is not needed(actually if you are logged in but don't want to use the login credentials you used in the login command, specifying `-e` and `-p` flags here will override those credentials for this command)
 The output of this command on success is an ID number. This can be used in later commands to see the status(whether it failed or succeeded) or to cancel the operation.
@@ -66,6 +67,7 @@ The inputs are very similiar to `rats`:
 3. `-resT` or `--reservation-times` specifies the military style times we want to make our reservation at in hh:mm format and in order of priority. 
 4. `-ps` or `--party-size` specifies the party size, in this case 2 people
 5. `-i` or `--interval` specifies the interval to repeat on in hh:mm format. So, if we used all the same parameters for the previous example with `-i 00:01`, then this command would try to make an 11:30 PM reservation at double chicken please for september 7th, 2023, and the bot would perform this request every minute (00 for hour, 01 for minute)
+6. `-t` or `--table` is an optional flag that allows the user to specify a priority list of table types. So an example input is `-t outdoor dining`. The priority of reservations in this case is all times in `-resT` will be tried in priority order with the first table type specified, then another iteration of all reservation times with a second table type.
 
 Here are the last remaining commands:
 
