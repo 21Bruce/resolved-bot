@@ -75,6 +75,7 @@ type ReserveAtIntervalParam struct {
     ReservationTimes []time.Time
     PartySize        int
     RepeatInterval   time.Duration
+    TableTypes 	     []api.TableType
 }
 
 /*
@@ -89,6 +90,7 @@ type ReserveAtTimeParam struct {
     ReservationTimes []time.Time
     PartySize        int
     RequestTime      time.Time
+    TableTypes 	     []api.TableType
 }
 
 /*
@@ -292,6 +294,7 @@ Purpose: This function is intended to run on a separate thread, and tries making
 a reservation at a given interval of time
 */
 func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan bool, output chan<- OperationResult){
+
     // find and store last time from time priority list
     lastTime, err := findLastTime(params.ReservationTimes)
 
@@ -319,6 +322,7 @@ func (a *AppCtx) reserveAtInterval(params ReserveAtIntervalParam, cancel <-chan 
                 ReservationTimes: params.ReservationTimes,
                 PartySize: params.PartySize,
                 VenueID: params.VenueID,
+                TableTypes: params.TableTypes,
             })
 
         // if there was an error and it wasn't due to every time being
@@ -436,6 +440,7 @@ func (a *AppCtx) reserveAtTime(params ReserveAtTimeParam, cancel <-chan bool, ou
             ReservationTimes: params.ReservationTimes,
             PartySize: params.PartySize,
             VenueID: params.VenueID,
+            TableTypes: []api.TableType(params.TableTypes),
         })
 
     if err != nil {
