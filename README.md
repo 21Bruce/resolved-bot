@@ -1,6 +1,6 @@
 # resolved-bot
 ## IMPORTANT UPDATE
-We currently have no plans to keep the bot up to date. All proposed diffs and patches from the community will still be actively reviewed however.
+We currently have no plans to keep the bot up to date, and it is probably not functional. All proposed diffs and patches from the community will still be actively reviewed however.
 ## Description
 Resolved is a combination of the following:
 1. A go API to resy
